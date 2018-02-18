@@ -19,63 +19,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-import abc
+from z80.instruction import Instruction
 from z80.assertions import assert_r
-from z80.assertions import assert_n
 from z80.assertions import assert_index
 from z80.assertions import assert_bcde
-
-
-class InstructionSet(object):
-    def __init__(self):
-        self.instructions = {}
-        for cls in Instruction.__subclasses__():
-            print(cls.__name__)
-            try:
-                cls.register(self)
-            except NotImplementedError as e:
-                raise NotImplementedError(cls.__name__ + ":" + str(e))
-
-    def define_instr(self, code, instr):
-        assert_n(code)
-        if code in self.instructions:
-            raise ValueError('code %x already defined' % code)
-        self.instructions[code] = instr
-
-    def define_instr2(self, code1, code2, instr):
-        assert_n(code1)
-        assert_n(code2)
-        if code1 not in self.instructions:
-            self.instructions[code1] = {}
-        if code2 in self.instructions[code1]:
-            raise ValueError('code %x %x already defined' %
-                             (code1, code2))
-        self.instructions[code1][code2] = instr
-
-
-class Instruction(object):
-    r_code = {'A': 0b111,
-              'B': 0b000,
-              'C': 0b001,
-              'D': 0b010,
-              'E': 0b011,
-              'H': 0b100,
-              'L': 0b101}
-    index_code = {'IX': 0xdd,
-                  'IY': 0xfd}
-
-    @abc.abstractmethod
-    def step(self, cpu):
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def register(instruction_set):
-        raise NotImplementedError('Implement registration method.')
-
-    def __init__(self):
-        self.size = 0
 
 
 ####################################################
@@ -98,8 +45,8 @@ class LD_r_r(Instruction):
     def register(iset):
         # 01 rrr rrr
         offset = 0b01000000
-        for dst, cdst in Instruction.r_code.iteritems():
-            for src, csrc in Instruction.r_code.iteritems():
+        for dst, cdst in Instruction.r_code.items():
+            for src, csrc in Instruction.r_code.items():
                 iset.define_instr(offset + (cdst << 3) + csrc,
                                   LD_r_r(dst, src))
 
@@ -120,7 +67,7 @@ class LD_r_n(Instruction):
     def register(iset):
         # 00 rrr 110
         offset = 0b00000110
-        for dst, cdst in Instruction.r_code.iteritems():
+        for dst, cdst in Instruction.r_code.items():
             iset.define_instr(offset + (cdst << 3), LD_r_n(dst))
 
     def step(self, cpu):
@@ -138,7 +85,7 @@ class LD_r_ref_HL(Instruction):
     def register(iset):
         # 01 rrr 110
         offset = 0b01000110
-        for dst, cdst in Instruction.r_code.iteritems():
+        for dst, cdst in Instruction.r_code.items():
             iset.define_instr(offset + (cdst << 3), LD_r_ref_HL(dst))
 
     def step(self, cpu):
@@ -158,8 +105,8 @@ class LD_r_ref_index_plus_d(Instruction):
     def register(iset):
         # 01 rrr 110
         offset = 0b01000110
-        for index, cindex in Instruction.index_code.iteritems():
-            for dst, cdst in Instruction.r_code.iteritems():
+        for index, cindex in Instruction.index_code.items():
+            for dst, cdst in Instruction.r_code.items():
                 iset.define_instr2(cindex,
                                    offset + (cdst << 3),
                                    LD_r_ref_index_plus_d(dst, index))
@@ -180,7 +127,7 @@ class LD_ref_HL_r(Instruction):
     @staticmethod
     def register(iset):
         offset = 0b01110000
-        for src, csrc in Instruction.r_code.iteritems():
+        for src, csrc in Instruction.r_code.items():
             iset.define_instr(offset + csrc,
                               LD_ref_HL_r(src))
 
@@ -201,8 +148,8 @@ class LD_ref_index_plus_d_r(Instruction):
     def register(iset):
         # 01 110 rrr
         offset = 0b01110000
-        for index, cindex in Instruction.index_code.iteritems():
-            for src, csrc in Instruction.r_code.iteritems():
+        for index, cindex in Instruction.index_code.items():
+            for src, csrc in Instruction.r_code.items():
                 iset.define_instr2(cindex,
                                    offset + csrc,
                                    LD_ref_index_plus_d_r(index, src))
@@ -235,7 +182,7 @@ class LD_ref_index_plus_d_n(Instruction):
 
     @staticmethod
     def register(iset):
-        for index, cindex in Instruction.index_code.iteritems():
+        for index, cindex in Instruction.index_code.items():
             iset.define_instr2(cindex, 0x36, LD_ref_index_plus_d_n(index))
 
     def step(self, cpu):

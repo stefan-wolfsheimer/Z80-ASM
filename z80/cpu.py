@@ -25,7 +25,7 @@ from z80.assertions import assert_nn
 from z80.assertions import assert_d
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
-from z80.instructions import InstructionSet
+from z80.instruction_set import InstructionSet
 
 
 class CPU(object):
