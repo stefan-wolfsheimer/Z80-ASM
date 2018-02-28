@@ -31,6 +31,14 @@ class Instruction(object):
               'E': 0b011,
               'H': 0b100,
               'L': 0b101}
+    dd_code = {'BC': 0b00,
+               'DE': 0b01,
+               'HL': 0b10,
+               'SP': 0b11}
+    qq_code = {'BC': 0b00,
+               'DE': 0b01,
+               'HL': 0b10,
+               'AF': 0b11}
     index_code = {'IX': 0xdd,
                   'IY': 0xfd}
 

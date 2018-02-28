@@ -83,6 +83,24 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu.GET_ii_plus_d('PC', 2), 0x0001)
         self.assertEqual(cpu.GET_ii_plus_d('PC', 3), 0x0002)
 
+    def test_GET_ref2_nn(self):
+        cpu = CPU()
+        cpu.LD_ref_nn_n(0xffff, 0x11)
+        cpu.LD_ref_nn_n(0x0000, 0x22)
+        cpu.LD_ref_nn_n(0x0001, 0x33)
+        self.assertEqual(cpu.GET_ref2_nn(0x0000), 0x3322)
+        self.assertEqual(cpu.GET_ref2_nn(0xffff), 0x2211)
+
+    def test_GET_ref2_PC_plus_d(self):
+        cpu = CPU()
+        cpu.LD_ref_nn_n(0xffff, 0x11)
+        cpu.LD_ref_nn_n(0x0000, 0x22)
+        cpu.LD_ref_nn_n(0x0001, 0x33)
+        cpu.LD_PC_nn(0xfffe)
+        self.assertEqual(cpu.GET_ref2_PC_plus_d(0), 0x1100)
+        self.assertEqual(cpu.GET_ref2_PC_plus_d(1), 0x2211)
+        self.assertEqual(cpu.GET_ref2_PC_plus_d(2), 0x3322)
+
     # 16 bit load
     def test_LD_PC_nn(self):
         cpu = CPU()
@@ -96,12 +114,50 @@ class TestCPU(unittest.TestCase):
             cpu.LD_SP_nn(0x10000)
         self.assertEqual(cpu.GET_SP(), 0x0000)
 
+    def test_LD_ii_nn(self):
+        cpu = CPU()
+        cpu.LD_ii_nn('BC', 0x1122)
+        cpu.LD_ii_nn('DE', 0x3344)
+        cpu.LD_ii_nn('HL', 0x5566)
+        cpu.LD_ii_nn('SP', 0x7788)
+        cpu.LD_ii_nn('PC', 0x99aa)
+        cpu.LD_ii_nn('IX', 0xbbcc)
+        cpu.LD_ii_nn('IY', 0xddee)
+        cpu.LD_ii_nn('AF', 0xff01)
+        self.assertEqual(cpu.GET_BC(), 0x1122)
+        self.assertEqual(cpu.GET_DE(), 0x3344)
+        self.assertEqual(cpu.GET_HL(), 0x5566)
+        self.assertEqual(cpu.GET_SP(), 0x7788)
+        self.assertEqual(cpu.GET_PC(), 0x99aa)
+        self.assertEqual(cpu.GET_IX(), 0xbbcc)
+        self.assertEqual(cpu.GET_IY(), 0xddee)
+        self.assertEqual(cpu.GET_r('B'), 0x11)
+        self.assertEqual(cpu.GET_r('C'), 0x22)
+        self.assertEqual(cpu.GET_r('D'), 0x33)
+        self.assertEqual(cpu.GET_r('E'), 0x44)
+        self.assertEqual(cpu.GET_r('H'), 0x55)
+        self.assertEqual(cpu.GET_r('L'), 0x66)
+        self.assertEqual(cpu.GET_r('A'), 0xff)
+        self.assertEqual(cpu.GET_F(), 0x01)
+
     # arithmetic
     def test_INC_PC(self):
         cpu = CPU()
         cpu.LD_PC_nn(0xffff)
         cpu.INC_PC(2)
         self.assertEqual(cpu.GET_PC(), 0x0001)
+
+    def test_INC_SP(self):
+        cpu = CPU()
+        cpu.LD_SP_nn(0xffff)
+        cpu.INC_SP(2)
+        self.assertEqual(cpu.GET_SP(), 0x0001)
+
+    def test_DEC_SP(self):
+        cpu = CPU()
+        cpu.LD_SP_nn(0x0001)
+        cpu.DEC_SP(2)
+        self.assertEqual(cpu.GET_SP(), 0xffff)
 
 
 if __name__ == '__main__':

@@ -25,6 +25,7 @@ from z80.assertions import assert_nn
 from z80.assertions import assert_d
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
+from z80.assertions import assert_index
 from z80.instruction_set import InstructionSet
 
 
@@ -103,6 +104,38 @@ class CPU(object):
         assert_nn(nn)
         self.IY = nn
 
+    def LD_ii_nn(self, ii, nn):
+        """ LD dd, nn"""
+        assert_ii(ii)
+        assert_nn(nn)
+        if ii == 'SP':
+            self.LD_SP_nn(nn)
+        elif ii == 'PC':
+            self.LD_PC_nn(nn)
+        elif ii == 'IX':
+            self.LD_IX_nn(nn)
+        elif ii == 'IY':
+            self.LD_IY_nn(nn)
+        elif ii == 'AF':
+            self.LD_F_n(nn & 0x00ff)
+            self.LD_A_n(nn >> 8)
+        else:
+            self.LD_r_n(ii[1], nn & 0x00ff)
+            self.LD_r_n(ii[0], nn >> 8)
+
+    def LD_index_nn(self, index, nn):
+        """ LD IX, nn or LD IY, nn"""
+        assert_index(index)
+        assert_nn(nn)
+        setattr(self, index, nn)
+
+    def LD_ref2_nn_nn(self, nn1, nn2):
+        """ LD (nn), n"""
+        assert_nn(nn1)
+        assert_n(nn2)
+        self.LD_ref_nn_n(nn1, nn2 & 0xff)
+        self.LD_ref_nn_n((nn1 + 1) % CPU.MEMSIZE, nn2 >> 8)
+
     # 8 bit getter #
     def GET_r(self, r):
         """B,C,D,E,H,L or A"""
@@ -127,7 +160,7 @@ class CPU(object):
         return self.mem[nn]
 
     def GET_ref_PC_plus_d(self, d):
-        """ eq. to self.GET_ref_nn(self.GET_ref_ii_plus_d('PC', 1)))"""
+        """ eq. to self.GET_ref_nn(self.GET_ii_plus_d('PC', 1)))"""
         return self.mm[self.GET_ii_plus_d('PC', d)]
 
     # 16 bit getter #
@@ -169,8 +202,28 @@ class CPU(object):
         nn = self.GET_ii(ii)
         return (nn + d) % CPU.MEMSIZE
 
+    def GET_ref2_nn(self, nn):
+        """(nn+1) << 8 + (nn)"""
+        assert_nn(nn)
+        msb = self.mem[(nn + 1) % CPU.MEMSIZE] << 8
+        return msb + self.mem[nn]
+
+    def GET_ref2_PC_plus_d(self, d):
+        """ eq. to self.GET_ref2_nn(self.GET_ii_plus_d('PC', 1)))"""
+        return self.GET_ref2_nn(self.GET_ii_plus_d('PC', d))
+
     # arithmetic
     def INC_PC(self, n=1):
         """ PC <- PC + n """
         assert_n(n)
         self.PC = (self.PC + n) % CPU.MEMSIZE
+
+    def INC_SP(self, n=1):
+        """ SP <- SP + n """
+        assert_n(n)
+        self.SP = (self.SP + n) % CPU.MEMSIZE
+
+    def DEC_SP(self, n=1):
+        """ SP <- SP - n """
+        assert_n(n)
+        self.SP = (self.SP - n) % CPU.MEMSIZE

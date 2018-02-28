@@ -25,6 +25,7 @@ from z80.assertions import assert_nn
 from z80.assertions import assert_d
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
+from z80.assertions import assert_qq
 
 
 class TestAssertions(unittest.TestCase):
@@ -83,6 +84,12 @@ class TestAssertions(unittest.TestCase):
         assert_ii('IX')
         assert_ii('IY')
         assert_ii('IR')
+
+    def test_assert_qq(self):
+        assert_qq('BC')
+        assert_qq('DE')
+        assert_qq('HL')
+        assert_qq('AF')
 
 
 if __name__ == '__main__':
