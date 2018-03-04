@@ -34,11 +34,12 @@ class LD_r_r(Instruction):
     """
     LD r,r'
     """
-    def __init__(self, r_dest, r_src):
-        assert_r(r_dest)
+    def __init__(self, r_dst, r_src):
+        assert_r(r_dst)
         assert_r(r_src)
-        self.r_dest = r_dest
+        self.r_dst = r_dst
         self.r_src = r_src
+        self.fmt = "LD {0}, {1}".format(self.r_dst, self.r_src)
         self.size = 1
 
     @staticmethod
@@ -51,7 +52,7 @@ class LD_r_r(Instruction):
                                   LD_r_r(dst, src))
 
     def step(self, cpu):
-        cpu.LD_r_n(cpu.GET_r(self.r_src))
+        cpu.LD_r_n(self.r_dst, cpu.GET_r(self.r_src))
 
 
 class LD_r_n(Instruction):
@@ -61,6 +62,7 @@ class LD_r_n(Instruction):
     def __init__(self, r_dst):
         assert_r(r_dst)
         self.r_dst = r_dst
+        self.fmt = "LD {0}, n".format(self.r_dst)
         self.size = 2
 
     @staticmethod
@@ -79,6 +81,7 @@ class LD_r_ref_HL(Instruction):
     def __init__(self, r_dst):
         assert_r(r_dst)
         self.r_dst = r_dst
+        self.fmt = "LD {0}, (HL)".format(self.r_dst)
         self.size = 1
 
     @staticmethod
@@ -99,6 +102,7 @@ class LD_r_ref_index_plus_d(Instruction):
         assert_index(index)
         self.r_dst = r_dst
         self.index = index
+        self.fmt = "LD {0}, ({1}+d)".format(self.r_dst, self.index)
         self.size = 3
 
     @staticmethod
@@ -122,6 +126,7 @@ class LD_ref_HL_r(Instruction):
     def __init__(self, r_src):
         assert_r(r_src)
         self.r_src = r_src
+        self.fmt = "LD (HL), {0}".format(self.r_src)
         self.size = 1
 
     @staticmethod
@@ -142,6 +147,7 @@ class LD_ref_index_plus_d_r(Instruction):
         assert_index(index)
         self.r_src = r_src
         self.index = index
+        self.fmt = "LD ({0}+d), {1}".format(self.index, self.r_src)
         self.size = 3
 
     @staticmethod
@@ -163,6 +169,7 @@ class LD_ref_index_plus_d_r(Instruction):
 class LD_ref_HL_n(Instruction):
     """LD (HL), n"""
     def __init__(self):
+        self.fmt = "LD (HL), n"
         self.size = 2
 
     @staticmethod
@@ -178,6 +185,7 @@ class LD_ref_index_plus_d_n(Instruction):
     def __init__(self, index):
         assert_index(index)
         self.index = index
+        self.fmt = "LD (IX+d), n".format(self.index)
         self.size = 4
 
     @staticmethod
@@ -196,6 +204,7 @@ class LD_A_ref_bcde(Instruction):
     def __init__(self, ref_src):
         assert_bcde(ref_src)
         self.ref_src = ref_src
+        self.fmt = "LD A, ({0})".format(self.ref_src)
         self.size = 1
 
     @staticmethod
@@ -210,6 +219,7 @@ class LD_A_ref_bcde(Instruction):
 class LD_A_ref_nn(Instruction):
     """LD A, (nn)"""
     def __init__(self):
+        self.fmt = "LD A, (nn)"
         self.size = 3
 
     @staticmethod
@@ -226,6 +236,7 @@ class LD_ref_bcde_A(Instruction):
     def __init__(self, ref_dst):
         assert_bcde(ref_dst)
         self.ref_dst = ref_dst
+        self.fmt = "LD ({0}), A".format(self.ref_dst)
         self.size = 1
 
     @staticmethod
@@ -239,6 +250,7 @@ class LD_ref_bcde_A(Instruction):
 
 class LD_ref_nn_A(Instruction):
     def __init__(self):
+        self.fmt = "LD (nn), A"
         self.size = 3
 
     @staticmethod
@@ -252,6 +264,7 @@ class LD_ref_nn_A(Instruction):
 
 class LD_A_I(Instruction):
     def __init__(self):
+        self.fmt = "LD A, I"
         self.size = 2
 
     @staticmethod
@@ -264,6 +277,7 @@ class LD_A_I(Instruction):
 
 class LD_A_R(Instruction):
     def __init__(self):
+        self.fmt = "LD A, R"
         self.size = 2
 
     @staticmethod
@@ -276,6 +290,7 @@ class LD_A_R(Instruction):
 
 class LD_I_A(Instruction):
     def __init__(self):
+        self.fmt = "LD I, A"
         self.size = 2
 
     @staticmethod
@@ -288,6 +303,7 @@ class LD_I_A(Instruction):
 
 class LD_R_A(Instruction):
     def __init__(self):
+        self.fmt = "LD R, A"
         self.size = 2
 
     @staticmethod

@@ -36,6 +36,11 @@ def assert_d(d):
         raise ValueError("%s is not a signed byte" % str(d))
 
 
+def assert_q(q):
+    if not isinstance(q, str) or q not in "BCDEHLAF":
+        raise ValueError("Invalid register %s (not in BCDEHLAF)" % str(q))
+
+
 def assert_r(r):
     if not isinstance(r, str) or r not in "BCDEHLA":
         raise ValueError("Invalid register %s (not in BCDEHLA)" % str(r))

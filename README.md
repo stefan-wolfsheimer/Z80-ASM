@@ -25,7 +25,7 @@ Notation Description
          whose address is specified by
 	 the contents of the Index register pair IY plus
          the signed displacement d
-
+* q      any of the registers A, B, C, D, E, H, L or F
 * r	 any of the registers A, B, C, D, E, H, or L
 * s	 any of r, n, (HL), (IX+d) or (IY+d)
 * m	 any of r, (HL), (IX+d) or (IY+d)
@@ -182,3 +182,20 @@ register pairs / 16 bit registers
 |POP IY          | 2      | FD         | IYh <- SP+1
 |                |        | E1         | IYl <- SP
 |                |        |            | SP <- SP+2
+
+exchange group
+--------------
+
+|Code            | length | opt code   | operation
+|----------------|--------|------------|-----------
+|EX DE, HL       | 1      | EB         | DE <-> HL
+|EX AF, AF'      | 1      | 08         | AF <-> AF'
+|EXX             | 1      | D9         | BC <-> BC'
+|                |        |            | DE <-> DE'
+|                |        |            | HL <-> HL'
+|EX (SP), HL     | 1      | E3         | H <-> (SP+1)
+|                |        |            | L <-> (SP)
+|EX (SP), IX     | 2      | DD         | IXh <-> (SP+1)
+|                |        | E3         | IXl <-> (SP)
+|EX (SP), IY     |2       | FD         | IYh <-> (SP+1)
+|                |        | E3         | IYl <-> (SP)

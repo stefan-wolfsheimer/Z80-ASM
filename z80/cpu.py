@@ -23,6 +23,7 @@
 from z80.assertions import assert_n
 from z80.assertions import assert_nn
 from z80.assertions import assert_d
+from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
 from z80.assertions import assert_index
@@ -46,7 +47,7 @@ class CPU(object):
 
     def __init__(self):
         self.main_register_set = GeneralPurposeRegisters()
-        self.alternate_register_set = GeneralPurposeRegisters()
+        self.alt_register_set = GeneralPurposeRegisters()
         self.I = 0x00
         self.R = 0x00
         self.IX = 0x0000
@@ -141,7 +142,7 @@ class CPU(object):
         setattr(self, index, nn)
 
     def LD_ref2_nn_nn(self, nn1, nn2):
-        """ LD (nn), n"""
+        """ LD (nn), nn"""
         assert_nn(nn1)
         assert_n(nn2)
         self.LD_ref_nn_n(nn1, nn2 & 0xff)
@@ -225,6 +226,14 @@ class CPU(object):
     def GET_ref2_PC_plus_d(self, d):
         """ eq. to self.GET_ref2_nn(self.GET_ii_plus_d('PC', 1)))"""
         return self.GET_ref2_nn(self.GET_ii_plus_d('PC', d))
+
+    # exchange
+    def EX_q_altq(self, q):
+        assert_q(q)
+        alt_value = getattr(self.alt_register_set, q)
+        main_value = getattr(self.main_register_set, q)
+        setattr(self.main_register_set, q, alt_value)
+        setattr(self.alt_register_set, q, main_value)
 
     # arithmetic
     def INC_PC(self, n=1):

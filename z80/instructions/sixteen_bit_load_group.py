@@ -31,10 +31,11 @@ from z80.assertions import assert_qq
 #
 ####################################################
 class LD_dd_nn(Instruction):
-    """ LD, nn"""
+    """ LD dd, nn"""
     def __init__(self, dd_dst):
         assert_dd(dd_dst)
         self.dd_dst = dd_dst
+        self.fmt = "LD {0}, nn".format(self.dd_dst)
         self.size = 3
 
     @staticmethod
@@ -53,6 +54,7 @@ class LD_index_nn(Instruction):
     def __init__(self, index_dst):
         assert_index(index_dst)
         self.index_dst = index_dst
+        self.fmt = "LD {0}, nn".format(self.index_dst)
         self.size = 4
 
     @staticmethod
@@ -67,6 +69,7 @@ class LD_index_nn(Instruction):
 class LD_HL_ref_nn(Instruction):
     """ LD HL, (nn)"""
     def __init__(self):
+        self.fmt = "LD HL, nn"
         self.size = 3
 
     @staticmethod
@@ -79,9 +82,10 @@ class LD_HL_ref_nn(Instruction):
 
 class LD_dd_ref_nn(Instruction):
     """ LD dd, (nn)"""
-    def __init__(self, dd_dest):
-        assert_dd(dd_dest)
-        self.dd_dest = dd_dest
+    def __init__(self, dd_dst):
+        assert_dd(dd_dst)
+        self.dd_dst = dd_dst
+        self.fmt = "LD {0}, (nn)".format(self.dd_dst)
         self.size = 4
 
     @staticmethod
@@ -91,7 +95,7 @@ class LD_dd_ref_nn(Instruction):
             iset.define_instr2(0xed, (cdst << 4) + offset, LD_dd_ref_nn(dst))
 
     def step(self, cpu):
-        cpu.LD_dd_nn(self.dd_dest, cpu.GET_ref2_PC_plus_d(2))
+        cpu.LD_dd_nn(self.dd_dst, cpu.GET_ref2_PC_plus_d(2))
 
 
 class LD_index_ref_nn(Instruction):
@@ -99,6 +103,7 @@ class LD_index_ref_nn(Instruction):
     def __init__(self, index_dst):
         assert_index(index_dst)
         self.index_dst = index_dst
+        self.fmt = "LD {0}, (nn)".format(self.index_dst)
         self.size = 4
 
     @staticmethod
@@ -113,6 +118,7 @@ class LD_index_ref_nn(Instruction):
 class LD_ref_nn_HL(Instruction):
     """ LD (nn), HL"""
     def __init__(self):
+        self.fmt = "LD (nn), HL"
         self.size = 3
 
     @staticmethod
@@ -128,6 +134,7 @@ class LD_ref_nn_dd(Instruction):
     def __init__(self, dd_src):
         assert_dd(dd_src)
         self.dd_src = dd_src
+        self.fmt = "LD (nn), {0}".format(self.dd_src)
         self.size = 4
 
     @staticmethod
@@ -141,10 +148,11 @@ class LD_ref_nn_dd(Instruction):
 
 
 class LD_ref_nn_index(Instruction):
-    """ LD (nn), dd"""
+    """ LD (nn), IX or LD (nn), IY"""
     def __init__(self, index_src):
         assert_index(index_src)
         self.index_src = index_src
+        self.fmt = "LD (nn), {0}".format(self.index_src)
         self.size = 4
 
     @staticmethod
@@ -159,6 +167,7 @@ class LD_ref_nn_index(Instruction):
 class LD_SP_HL(Instruction):
     """ LD SP, HL"""
     def __init__(self):
+        self.fmt = "LD SP, HL"
         self.size = 1
 
     @staticmethod
@@ -174,6 +183,7 @@ class LD_SP_index(Instruction):
     def __init__(self, src_index):
         assert_index(src_index)
         self.src_index = src_index
+        self.fmt = "LD SP, {0}".format(self.src_index)
         self.size = 2
 
     @staticmethod
@@ -190,6 +200,7 @@ class PUSH_qq(Instruction):
     def __init__(self, qq):
         assert_qq(qq)
         self.qq = qq
+        self.fmt = "PUSH {0}".format(self.qq)
         self.size = 1
 
     @staticmethod
@@ -209,6 +220,7 @@ class PUSH_index(object):
     def __init__(self, index):
         assert_index(index)
         self.index = index
+        self.fmt = "PUSH {0}".format(self.index)
         self.size = 2
 
     @staticmethod
@@ -226,6 +238,7 @@ class POP_qq(object):
     def __init__(self, qq):
         assert_qq(qq)
         self.qq = qq
+        self.fmt = "POP {0}".format(self.qq)
         self.size = 1
 
     @staticmethod
@@ -245,6 +258,7 @@ class POP_index(object):
     def __init__(self, index):
         assert_index(index)
         self.index = index
+        self.fmt = "POP {0}".format(self.index)
         self.size = 2
 
     @staticmethod

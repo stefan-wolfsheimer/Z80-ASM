@@ -23,6 +23,7 @@ import unittest
 from z80.assertions import assert_n
 from z80.assertions import assert_nn
 from z80.assertions import assert_d
+from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
 from z80.assertions import assert_qq
@@ -56,6 +57,16 @@ class TestAssertions(unittest.TestCase):
             assert_d(128)
         assert_d(127)
         assert_d(-128)
+
+    def test_assert_q(self):
+        assert_q('B')
+        assert_q('C')
+        assert_q('D')
+        assert_q('E')
+        assert_q('H')
+        assert_q('L')
+        assert_q('A')
+        assert_q('F')
 
     def test_assert_r(self):
         with self.assertRaises(ValueError):

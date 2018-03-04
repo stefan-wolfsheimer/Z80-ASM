@@ -39,7 +39,6 @@ class InstructionSet(object):
             if cls.__name__ != 'NOP2':
                 try:
                     cls.register(self)
-                    print(cls.__name__)
                 except NotImplementedError as e:
                     raise NotImplementedError(cls.__name__ + ":" + str(e))
 

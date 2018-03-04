@@ -27,6 +27,7 @@ class NOP(Instruction):
     NOP
     """
     def __init__(self):
+        self.fmt = "NOP"
         self.size = 1
 
     @staticmethod
@@ -42,6 +43,7 @@ class NOP2(Instruction):
     undefined 2 byte instruction
     """
     def __init__(self):
+        self.fmt = "UNDEF"
         self.size = 2
 
     def step(self, cpu):

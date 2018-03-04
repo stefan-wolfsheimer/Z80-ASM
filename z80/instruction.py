@@ -51,5 +51,9 @@ class Instruction(object):
     def register(instruction_set):
         raise NotImplementedError('Implement registration method.')
 
+    def format(self):
+        return self.fmt
+
     def __init__(self):
         self.size = 0
+        self.fmt = self.__class__.__name__
