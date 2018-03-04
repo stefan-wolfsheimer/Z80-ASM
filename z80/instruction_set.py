@@ -22,6 +22,7 @@
 # from z80.instructions import Instruction
 from z80.instruction import Instruction
 from z80.assertions import assert_n
+from z80.instructions.general_purpose import NOP2
 import importlib
 import pkgutil
 
@@ -35,11 +36,26 @@ class InstructionSet(object):
             full_name = package.__name__ + '.' + name
             importlib.import_module(full_name)
         for cls in Instruction.__subclasses__():
-            try:
-                cls.register(self)
-                print(cls.__name__)
-            except NotImplementedError as e:
-                raise NotImplementedError(cls.__name__ + ":" + str(e))
+            if cls.__name__ != 'NOP2':
+                try:
+                    cls.register(self)
+                    print(cls.__name__)
+                except NotImplementedError as e:
+                    raise NotImplementedError(cls.__name__ + ":" + str(e))
+
+    def fetch(self, cpu):
+        code1 = cpu.GET_ref_PC_plus_d(0)
+        if code1 in self.instructions:
+            if isinstance(self.instructions[code1], dict):
+                code2 = cpu.GET_ref_PC_plus_d(1)
+                if code2 in self.instructions[code1]:
+                    return self.instructions[code1][code2]
+                else:
+                    return NOP2()
+            else:
+                return self.instructions[code1]
+        else:
+            raise NotImplemented('instruction not implemented %02x' % code1)
 
     def define_instr(self, code, instr):
         assert_n(code)

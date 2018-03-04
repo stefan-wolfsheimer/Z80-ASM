@@ -29,9 +29,7 @@ from z80.assertions import assert_index
 from z80.instruction_set import InstructionSet
 
 
-class CPU(object):
-    MEMSIZE = 0x10000
-
+class GeneralPurposeRegisters(object):
     def __init__(self):
         self.B = 0x00
         self.C = 0x00
@@ -41,6 +39,14 @@ class CPU(object):
         self.L = 0x00
         self.A = 0x00
         self.F = 0x00
+
+
+class CPU(object):
+    MEMSIZE = 0x10000
+
+    def __init__(self):
+        self.main_register_set = GeneralPurposeRegisters()
+        self.alternate_register_set = GeneralPurposeRegisters()
         self.I = 0x00
         self.R = 0x00
         self.IX = 0x0000
@@ -50,22 +56,27 @@ class CPU(object):
         self.mem = bytearray(CPU.MEMSIZE)
         self.instr_set = InstructionSet()
 
+    def instr_cycle(self):
+        instr = self.instr_set.fetch(self)
+        instr.step(self)
+        self.INC_PC(instr.size)
+
     # 8 bit load #
     def LD_r_n(self, r_dest, n):
         """ LD r, n"""
         assert_r(r_dest)
         assert_n(n)
-        setattr(self, r_dest, n)
+        setattr(self.main_register_set, r_dest, n)
 
     def LD_A_n(self, n):
         """ LD A,n """
         assert_n(n)
-        self.A = n
+        self.main_register_set.A = n
 
     def LD_F_n(self, n):
         """ LD F, n"""
         assert_n(n)
-        self.F = n
+        self.main_register_set.F = n
 
     def LD_I_n(self, n):
         """ LD I, n"""
@@ -140,13 +151,13 @@ class CPU(object):
     def GET_r(self, r):
         """B,C,D,E,H,L or A"""
         assert_r(r)
-        return getattr(self, r)
+        return getattr(self.main_register_set, r)
 
     def GET_A(self):
-        return self.A
+        return self.main_register_set.A
 
     def GET_F(self):
-        return self.F
+        return self.main_register_set.F
 
     def GET_I(self):
         return self.I
@@ -160,8 +171,11 @@ class CPU(object):
         return self.mem[nn]
 
     def GET_ref_PC_plus_d(self, d):
-        """ eq. to self.GET_ref_nn(self.GET_ii_plus_d('PC', 1)))"""
-        return self.mm[self.GET_ii_plus_d('PC', d)]
+        """
+        returns (PC+d)
+        eq. to self.GET_ref_nn(self.GET_ii_plus_d('PC', 1)))
+        """
+        return self.mem[self.GET_ii_plus_d('PC', d)]
 
     # 16 bit getter #
     def GET_PC(self):
@@ -171,16 +185,16 @@ class CPU(object):
         return self.SP
 
     def GET_BC(self):
-        return (self.B << 8) + self.C
+        return (self.main_register_set.B << 8) + self.main_register_set.C
 
     def GET_DE(self):
-        return (self.D << 8) + self.E
+        return (self.main_register_set.D << 8) + self.main_register_set.E
 
     def GET_HL(self):
-        return (self.H << 8) + self.L
+        return (self.main_register_set.H << 8) + self.main_register_set.L
 
     def GET_AF(self):
-        return (self.A << 8) + self.F
+        return (self.main_register_set.A << 8) + self.main_register_set.F
 
     def GET_IX(self):
         return self.IX
