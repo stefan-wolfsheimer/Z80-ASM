@@ -27,7 +27,7 @@ from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
 from z80.assertions import assert_index
-from z80.instruction_set import InstructionSet
+from z80.instructions import InstructionSet
 
 
 class GeneralPurposeRegisters(object):
