@@ -140,7 +140,66 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu.GET_r('A'), 0xff)
         self.assertEqual(cpu.GET_F(), 0x01)
 
-    # arithmetic
+    # flags
+    def check_flags(self, cpu, flags):
+        if isinstance(flags, str):
+            sflags = flags
+            flags = {'S': False, 'Z': False, '5': False, 'H': False,
+                     '3': False, 'P': False, 'N': False, 'C': False}
+            for c in sflags:
+                if c == 'V':
+                    c = 'P'
+                flags[c] = True
+        for f, v in flags.items():
+            if v:
+                if not cpu.GET_FLAG(f):
+                    raise RuntimeError(f)
+                self.assertTrue(cpu.GET_FLAG(f))
+            else:
+                self.assertFalse(cpu.GET_FLAG(f))
+
+    def test_SET_FLAGS(self):
+        cpu = CPU()
+        flags = {'S': False,
+                 'Z': False,
+                 '5': False,
+                 'H': False,
+                 '3': False,
+                 'P': False,
+                 'N': False,
+                 'C': False}
+        for f in flags:
+            self.assertFalse(cpu.GET_FLAG(f))
+        for f in flags.keys():
+            cpu.SET_FLAG(f, True)
+            v = cpu.GET_F()
+            cpu.SET_FLAG(f, True)
+            self.assertEqual(v, cpu.GET_F())
+            flags[f] = True
+            self.check_flags(cpu, flags)
+        keys = list(flags.keys())
+        for f in keys[::-1]:
+            cpu.SET_FLAG(f, False)
+            v = cpu.GET_F()
+            cpu.SET_FLAG(f, False)
+            self.assertEqual(v, cpu.GET_F())
+            flags[f] = False
+            self.check_flags(cpu, flags)
+        for f in flags:
+            self.assertFalse(cpu.GET_FLAG(f))
+
+    # 8 bit arithmetic
+    def test_ADD_A_n_0(self):
+        tests = [(0x00, 0x40, 0x40, '')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            cpu.ADD_A_n(t[1])
+            self.assertEqual(cpu.GET_A(), t[2])
+            self.check_flags(cpu, t[3])
+
+    # increasing / decreasing registers
     def test_INC_PC(self):
         cpu = CPU()
         cpu.LD_PC_nn(0xffff)
@@ -158,6 +217,20 @@ class TestCPU(unittest.TestCase):
         cpu.LD_SP_nn(0x0001)
         cpu.DEC_SP(2)
         self.assertEqual(cpu.GET_SP(), 0xffff)
+
+    def test_INC_ii(self):
+        cpu = CPU()
+        cpu.LD_ii_nn('DE', 0xffff)
+        cpu.INC_ii('DE')
+        self.assertEqual(cpu.GET_DE(), 0x0000)
+
+    def test_DEC_ii(self):
+        cpu = CPU()
+        cpu.LD_ii_nn('BC', 0x0000)
+        cpu.DEC_ii('BC')
+        self.assertEqual(cpu.GET_BC(), 0xffff)
+        cpu.DEC_ii('BC')
+        self.assertEqual(cpu.GET_BC(), 0xfffe)
 
 
 if __name__ == '__main__':

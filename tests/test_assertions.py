@@ -27,6 +27,7 @@ from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
 from z80.assertions import assert_qq
+from z80.assertions import assert_flag
 
 
 class TestAssertions(unittest.TestCase):
@@ -101,6 +102,17 @@ class TestAssertions(unittest.TestCase):
         assert_qq('DE')
         assert_qq('HL')
         assert_qq('AF')
+
+    def test_assert_flag(self):
+        assert_flag('S')
+        assert_flag('Z')
+        assert_flag('5')
+        assert_flag('H')
+        assert_flag('3')
+        assert_flag('P')
+        assert_flag('V')
+        assert_flag('N')
+        assert_flag('C')
 
 
 if __name__ == '__main__':

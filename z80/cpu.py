@@ -27,10 +27,21 @@ from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
 from z80.assertions import assert_index
+from z80.assertions import assert_flag
 from z80.instructions import InstructionSet
 
 
 class GeneralPurposeRegisters(object):
+    FLAG_MASK = {'S': 0x80,
+                 'Z': 0x40,
+                 '5': 0x20,
+                 'H': 0x10,
+                 '3': 0x08,
+                 'P': 0x04,
+                 'V': 0x04,
+                 'N': 0x02,
+                 'C': 0x01}
+
     def __init__(self):
         self.B = 0x00
         self.C = 0x00
@@ -40,6 +51,18 @@ class GeneralPurposeRegisters(object):
         self.L = 0x00
         self.A = 0x00
         self.F = 0x00
+
+    def SET_FLAG(self, flag):
+        assert_flag(flag)
+        self.F |= GeneralPurposeRegisters.FLAG_MASK[flag]
+
+    def UNSET_FLAG(self, flag):
+        assert_flag(flag)
+        self.F &= 0xff ^ GeneralPurposeRegisters.FLAG_MASK[flag]
+
+    def GET_FLAG(self, flag):
+        assert_flag(flag)
+        return 1 if self.F & GeneralPurposeRegisters.FLAG_MASK[flag] else 0
 
 
 class CPU(object):
@@ -235,7 +258,38 @@ class CPU(object):
         setattr(self.main_register_set, q, alt_value)
         setattr(self.alt_register_set, q, main_value)
 
-    # arithmetic
+    # flags
+    def SET_FLAG(self, flag, state=1):
+        assert_flag(flag)
+        if state:
+            self.main_register_set.SET_FLAG(flag)
+        else:
+            self.main_register_set.UNSET_FLAG(flag)
+
+    def GET_FLAG(self, flag):
+        assert_flag(flag)
+        return self.main_register_set.GET_FLAG(flag)
+
+    # 8 bit arithmetic
+    def ADD_A_n(self, n, carry=0):
+        assert_n(n)
+        a = self.GET_A()
+        res = a + n + carry
+        res_modulo = res % 0x100
+        HM = 0b00001111
+        MSB = 0b10000000
+        overflow = (a & MSB) == (n & MSB) and (res_modulo & MSB) != (a & MSB)
+        self.SET_FLAG('S', res_modulo & 0b10000000)
+        self.SET_FLAG('Z', res_modulo == 0x00)
+        self.SET_FLAG('5', res_modulo & 0b00100000)
+        self.SET_FLAG('H', (a & HM) + (n & HM) + carry > HM)
+        self.SET_FLAG('3', res_modulo & 0b00001000)
+        self.SET_FLAG('V', overflow)
+        self.SET_FLAG('N', False)
+        self.SET_FLAG('C', res > 0x100)
+        self.LD_A_n(res_modulo)
+
+    # 16 bit arithmetic
     def INC_PC(self, n=1):
         """ PC <- PC + n """
         assert_n(n)
@@ -250,3 +304,17 @@ class CPU(object):
         """ SP <- SP - n """
         assert_n(n)
         self.SP = (self.SP - n) % CPU.MEMSIZE
+
+    def INC_ii(self, ii, n=1):
+        """ ii <- ii + n"""
+        assert_ii(ii)
+        value = self.GET_ii(ii)
+        value = (value + n) % CPU.MEMSIZE
+        self.LD_ii_nn(ii, value)
+
+    def DEC_ii(self, ii, n=1):
+        """ ii <- ii - n"""
+        assert_ii(ii)
+        value = self.GET_ii(ii)
+        value = (value - n) % CPU.MEMSIZE
+        self.LD_ii_nn(ii, value)

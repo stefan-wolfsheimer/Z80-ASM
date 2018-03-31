@@ -55,6 +55,8 @@ class InstructionSet(object):
                                    "exchange group")
         self.add_instruction_group(instr_templates.GENERAL_PURPOSE,
                                    "general purpose group")
+        self.add_instruction_group(instr_templates.BLOCK_TRANSFER_GROUP,
+                                   "block transfer group")
 
     def add_instruction_group(self, instr_set, grp):
         for entry in instr_set:

@@ -39,6 +39,22 @@ Notation Description
 * rr	 any of the register pairs BC, DE, IY or SP
 * ii     any of the register pairs IX, IY
 
+Flags
+-----
+
+|bit|symbol| meaning                                    |
+|---|------|--------------------------------------------|
+| 7 | S    |Sign flag, MSB is 1                         | 
+| 6 | Z    |Zero flag                                   | 
+| 5 | F5   |Copy of bit 5 (undoc)                       |
+| 4 | H    |Half Carry (carry from bit 3 to 4)          |
+| 3 | F3   |Copy of bit 3 (undoc)                       |
+| 2 | P/V  |Parity / Overflow                           |
+|   |      |P: even number of bits set                  |
+|   |      |V: 2-complement number does not fit         |
+| 1 | N    |Subtract: last operation was substruction   |
+| 0 | C    |Carry: result does not fit in the register  |
+
 The following binary codes are used in the instructions.
 
 8 bit register code

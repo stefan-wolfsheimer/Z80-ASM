@@ -21,6 +21,9 @@
 # SOFTWARE.
 
 
+FLAGS = ('S', 'Z', '5', 'H', '3', 'P', 'V', 'N', 'C')
+
+
 def assert_n(n):
     if not isinstance(n, int) or n < 0 or n > 0xff:
         raise ValueError("%s is not a byte" % str(n))
@@ -73,3 +76,9 @@ def assert_bcde(bcde):
     if not isinstance(bcde, str) or bcde not in ('BC', 'DE'):
         raise ValueError("Invalid register pair %s (expected BC or DE)" %
                          str(bcde))
+
+
+def assert_flag(flag):
+    if not isinstance(flag, str) or flag not in FLAGS:
+        raise ValueError("Invalid flag pair %s ( expected %s)" %
+                         (str(flag), ", ".join(FLAGS)))

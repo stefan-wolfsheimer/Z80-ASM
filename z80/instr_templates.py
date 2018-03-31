@@ -67,7 +67,7 @@ def LD_R_A(cpu):
 
 
 EIGHT_BIT_LOAD_GROUP = [
-    ("LD r, r",        ("01{0}{1}"),                  1, "{0} <- {1}",      LD_r_r),     
+    ("LD r, r",        ("01{0}{1}"),                  1, "{0} <- {1}",      LD_r_r),
     ("LD r, n",        ("00{0}110", "n"),             1, "{0} <- n",        LD_r_n),
     ("LD r, (HL)",     ("01{0}110"),                  1, "{0} <- (HL)",     LD_r_ref_HL),
     ("LD r, (ii + d)", ("11{1}101", "01{0}110", "d"), 1, "{0} <- ({1}+d)",  LD_r_ref_index_plus_d),
@@ -191,12 +191,107 @@ EXCHANGE_GROUP = [
     ("EX AF, AF'",  (0x08),             1, "AF <-> AF'",                         EX_AF_altAF),
     ("EXX",         (0xd9),             1, "BC <-> BC', DE <-> DE', HL <-> HL'", EXX),
     ("EX (SP), HL", (0xe3),             1, "H <-> (SP+1), L <-> (SP)",           EX_ref_SP_HL),
-    ("EX (SP), ii", ("11{0}101", 0xe3), 1, "{0}_h <-> (SP+1), {0}_l <-> (SP)",   EX_ref_SP_ii),
-]
+    ("EX (SP), ii", ("11{0}101", 0xe3), 1, "{0}_h <-> (SP+1), {0}_l <-> (SP)",   EX_ref_SP_ii)]
 
 ################################################################################
 #
-# general purpose group
+# block transfer group
+#
+################################################################################
+def LDI(cpu):
+    cpu.LD_ref_nn_n(cpu.GET_DE(), cpu.GET_ref_nn(cpu.GET_HL()))
+    cpu.INC_ii('DE')
+    cpu.INC_ii('HL')
+    cpu.DEC_ii('BC')
+    cpu.UNSET_FLAG('H')
+    cpu.UNSET_FLAG('N')
+    if cpu.GET_BC() == 1:
+        cpu.SET_FLAG('V')
+    else:
+        cpu.UNSET_FLAG('V')
+
+def LDIR(cpu):
+    LDI(cpu)
+    if cpu.GET_BC() != 0x0000:
+        cpu.DEC_PC(2)
+
+def LDD(cpu):
+    cpu.LD_ref_nn_n(cpu.GET_DE(), cpu.GET_ref_nn(cpu.GET_HL()))
+    cpu.DEC_ii('DE')
+    cpu.DEC_ii('HL')
+    cpu.DEC_ii('BC')
+    cpu.UNSET_FLAG('H')
+    cpu.UNSET_FLAG('N')
+    if cpu.GET_BC() == 1:
+        cpu.SET_FLAG('V')
+    else:
+        cpu.UNSET_FLAG('V')
+
+
+def LDDR(cpu):
+    LDD(cpu)
+    if cpu.GET_BC() != 0x0000:
+        cpu.DEC_PC(2)
+
+# todo: make t-states dynamic, depending on the result
+# T-states for LDIR and LDDR: if BC = 0: 16
+BLOCK_TRANSFER_GROUP = [
+    ("LDI",  (0xed, 0xa0), 16, "(DE) <- (HL), DE <- DE + 1, HL <- HL + 1, BC <- BC - 1",               LDI),
+    ("LDIR", (0xed, 0xb0), 21, "(DE) <- (HL), DE <- DE + 1, HL <- HL + 1, BC <- BC - 1 WHILE BC != 0", LDIR),
+    ("LDD",  (0xed, 0xa8), 16, "(DE) <- (HL), DE <- DE - 1, HL <- HL - 1, BC <- BC - 1",               LDD),
+    ("LDDR", (0xed, 0xb8), 21, "(DE) <- (HL), DE <- DE - 1, HL <- HL - 1, BC <- BC - 1 WHILE BC != 0", LDDR)]
+
+################################################################################
+#
+# Search group
+#
+################################################################################
+# todo
+
+################################################################################
+#
+# 8-bit arithmetic group
+#
+################################################################################
+def ADD_A_r(cpu, r):
+    cpu.ADD_A_n(cpu.GET_r(r))
+
+def ADD_A_n(cpu):
+    cpu.ADD_A_n(cpu.GET_ref_PC_plus_d(1))
+
+def ADD_A_ref_HL(cpu):
+    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_HL()))
+
+def ADD_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
+
+def ADC_A_r(cpu, r):
+    cpu.ADD_A_n(cpu.GET_r(r), 1)
+
+def ADC_A_n(cpu):
+    cpu.ADD_A_n(cpu.GET_ref_PC_plus_d(1), 1)
+
+def ADC_A_ref_HL(cpu):
+    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_HL()), 1)
+
+def ADC_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)), 1)
+
+EIGHT_BIT_ARITHMETIC_GROUP = [
+    ("ADD A, r",        ("10000{0}"),             4, "A <- A + {0}",       ADD_A_r),
+    ("ADD A, n",        (0xc6, "n"),              7, "A <- A + n",         ADD_A_n),
+    ("ADD A, (HL)",     (0x86),                   7, "A <- A + (HL)",      ADD_A_ref_HL),
+    ("ADD A, (ii + d)", ("11{0}101", 0x86, "d"),  19, "A <- A + ({0}+d)",  ADD_A_ref_index_plus_d),
+    ("ADC A, r",        ("10001{0}"),             4, "A <- A + {0} + CY",  ADC_A_r),
+    ("ADC A, n",        (0xce, "n"),              7, "A <- A + n",         ADC_A_n),
+    ("ADC A, (HL)",     (0x8e),                   7, "A <- A + (HL)",      ADC_A_ref_HL),
+    ("ADC A, (ii + d)", ("11{0}101", 0x8e, "d"),  19, "A <- A + ({0}+d)",  ADC_A_ref_index_plus_d)]
+
+################################################################################
+#
+# General purpose group
 #
 ################################################################################
 def NOP(cpu):
