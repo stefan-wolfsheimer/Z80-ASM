@@ -141,22 +141,16 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu.GET_F(), 0x01)
 
     # flags
-    def check_flags(self, cpu, flags):
-        if isinstance(flags, str):
-            sflags = flags
-            flags = {'S': False, 'Z': False, '5': False, 'H': False,
-                     '3': False, 'P': False, 'N': False, 'C': False}
-            for c in sflags:
-                if c == 'V':
-                    c = 'P'
-                flags[c] = True
-        for f, v in flags.items():
-            if v:
-                if not cpu.GET_FLAG(f):
-                    raise RuntimeError(f)
-                self.assertTrue(cpu.GET_FLAG(f))
-            else:
-                self.assertFalse(cpu.GET_FLAG(f))
+    def flags2str(self, flags, V_or_P='V'):
+        ret = ''
+        if V_or_P == 'V':
+            sflags = 'SZ5H3VNC'
+        else:
+            sflags = 'SZ5H3PNC'
+        for f in sflags:
+            if f in flags and flags[f]:
+                ret += f
+        return ret
 
     def test_SET_FLAGS(self):
         cpu = CPU()
@@ -174,30 +168,108 @@ class TestCPU(unittest.TestCase):
             cpu.SET_FLAG(f, True)
             v = cpu.GET_F()
             cpu.SET_FLAG(f, True)
-            self.assertEqual(v, cpu.GET_F())
             flags[f] = True
-            self.check_flags(cpu, flags)
+            self.assertEqual(v, cpu.GET_F())
+            self.assertEqual(self.flags2str(flags, 'P'), cpu.GET_FLAGS('P'))
         keys = list(flags.keys())
         for f in keys[::-1]:
             cpu.SET_FLAG(f, False)
             v = cpu.GET_F()
             cpu.SET_FLAG(f, False)
-            self.assertEqual(v, cpu.GET_F())
             flags[f] = False
-            self.check_flags(cpu, flags)
+            self.assertEqual(v, cpu.GET_F())
+            self.assertEqual(self.flags2str(flags, 'P'), cpu.GET_FLAGS('P'))
         for f in flags:
             self.assertFalse(cpu.GET_FLAG(f))
 
     # 8 bit arithmetic
-    def test_ADD_A_n_0(self):
-        tests = [(0x00, 0x40, 0x40, '')]
+    def test_ADD_A_n(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x40, False, 0x40, '')]
         cpu = CPU()
         for t in tests:
             cpu.LD_F_n(0x00)
             cpu.LD_A_n(t[0])
+            cpu.SET_FLAG('C', t[2])
             cpu.ADD_A_n(t[1])
+            self.assertEqual(cpu.GET_A(), t[3])
+            self.assertEqual(cpu.GET_FLAGS('V'), t[4])
+
+    def test_SUB_A_n(self):
+        # todo add more edge cases
+        tests = [(0x40, 0x40, False, 0x00, 'Z')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            cpu.SET_FLAG('C', t[2])
+            cpu.SUB_A_n(t[1])
+            self.assertEqual(cpu.GET_A(), t[3])
+            self.assertEqual(cpu.GET_FLAGS('V'), t[4])
+
+    def test_AND_A_n(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 0x00, 'ZHP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            cpu.AND_A_n(t[1])
             self.assertEqual(cpu.GET_A(), t[2])
-            self.check_flags(cpu, t[3])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[3])
+
+    def test_OR_A_n(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 0x00, 'ZHP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            cpu.OR_A_n(t[1])
+            self.assertEqual(cpu.GET_A(), t[2])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[3])
+
+    def test_XOR_A_n(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 0x00, 'ZHP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            cpu.XOR_A_n(t[1])
+            self.assertEqual(cpu.GET_A(), t[2])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[3])
+
+    def test_CP_A_n(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZN')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            cpu.CP_A_n(t[1])
+            self.assertEqual(cpu.GET_A(), t[0])
+            self.assertEqual(cpu.GET_FLAGS('V'), t[2])
+
+    def test_INC_n(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x01, '')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            n = cpu.INC_n(t[0])
+            self.assertEqual(n, t[1])
+            self.assertEqual(cpu.GET_FLAGS('V'), t[2])
+
+    def test_DEC_n(self):
+        # todo add more edge cases
+        tests = [(0x01, 0x00, 'ZN')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            n = cpu.DEC_n(t[0])
+            self.assertEqual(n, t[1])
+            self.assertEqual(cpu.GET_FLAGS('V'), t[2])
 
     # increasing / decreasing registers
     def test_INC_PC(self):

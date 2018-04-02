@@ -29,6 +29,7 @@ from z80.assertions import assert_ii
 from z80.assertions import assert_index
 from z80.assertions import assert_flag
 from z80.instructions import InstructionSet
+from z80.util import parity
 
 
 class GeneralPurposeRegisters(object):
@@ -270,6 +271,17 @@ class CPU(object):
         assert_flag(flag)
         return self.main_register_set.GET_FLAG(flag)
 
+    def GET_FLAGS(self, V_or_P='V'):
+        if V_or_P == 'V':
+            flags = 'SZ5H3VNC'
+        else:
+            flags = 'SZ5H3PNC'
+        ret = ''
+        for f in flags:
+            if self.GET_FLAG(f):
+                ret += f
+        return ret
+
     # 8 bit arithmetic
     def ADD_A_n(self, n, carry=0):
         assert_n(n)
@@ -282,12 +294,97 @@ class CPU(object):
         self.SET_FLAG('S', res_modulo & 0b10000000)
         self.SET_FLAG('Z', res_modulo == 0x00)
         self.SET_FLAG('5', res_modulo & 0b00100000)
+        # todo check H flag
         self.SET_FLAG('H', (a & HM) + (n & HM) + carry > HM)
         self.SET_FLAG('3', res_modulo & 0b00001000)
         self.SET_FLAG('V', overflow)
         self.SET_FLAG('N', False)
         self.SET_FLAG('C', res > 0x100)
         self.LD_A_n(res_modulo)
+
+    def SUB_A_n(self, n, carry=0):
+        assert_n(n)
+        self.ADD_A_n((0x100 - n) % 0x100, carry)
+
+    def AND_A_n(self, n):
+        assert_n(n)
+        a = self.GET_A()
+        a &= n
+        self.SET_FLAG('S', a & 0b10000000)
+        self.SET_FLAG('Z', a == 0x00)
+        self.SET_FLAG('H', True)
+        self.SET_FLAG('P', parity(a))
+        self.SET_FLAG('N', False)
+        self.SET_FLAG('C', False)
+        self.LD_A_n(a)
+
+    def OR_A_n(self, n):
+        assert_n(n)
+        a = self.GET_A()
+        a |= n
+        self.SET_FLAG('S', a & 0b10000000)
+        self.SET_FLAG('Z', a == 0x00)
+        self.SET_FLAG('H', True)
+        self.SET_FLAG('P', parity(a))
+        self.SET_FLAG('N', False)
+        self.SET_FLAG('C', False)
+        self.LD_A_n(a)
+
+    def XOR_A_n(self, n):
+        assert_n(n)
+        a = self.GET_A()
+        a ^= n
+        self.SET_FLAG('S', a & 0b10000000)
+        self.SET_FLAG('Z', a == 0x00)
+        self.SET_FLAG('H', True)
+        self.SET_FLAG('P', parity(a))
+        self.SET_FLAG('N', False)
+        self.SET_FLAG('C', False)
+        self.LD_A_n(a)
+
+    def CP_A_n(self, n):
+        assert_n(n)
+        a = self.GET_A()
+        n = (0x100 - n) % 0x100
+        res = a + n
+        res_modulo = res % 0x100
+        HM = 0b00001111
+        MSB = 0b10000000
+        overflow = (a & MSB) == (n & MSB) and (res_modulo & MSB) != (a & MSB)
+        self.SET_FLAG('S', res_modulo & 0b10000000)
+        self.SET_FLAG('Z', res_modulo == 0x00)
+        self.SET_FLAG('5', res_modulo & 0b00100000)
+        self.SET_FLAG('H', (a & HM) + (n & HM) > HM)
+        self.SET_FLAG('3', res_modulo & 0b00001000)
+        self.SET_FLAG('V', overflow)
+        self.SET_FLAG('N', True)
+        self.SET_FLAG('C', res > 0x100)
+
+    def INC_n(self, n):
+        assert_n(n)
+        HM = 0b00001111
+        ret = (n + 1) % 0x100
+        self.SET_FLAG('S', ret & 0b10000000)
+        self.SET_FLAG('Z', ret == 0x00)
+        self.SET_FLAG('5', ret & 0b00100000)
+        self.SET_FLAG('H', (ret & HM) + (n & HM) > HM)
+        self.SET_FLAG('3', ret & 0b00001000)
+        self.SET_FLAG('V', n == 0x7e)
+        self.SET_FLAG('N', False)
+        return ret
+
+    def DEC_n(self, n):
+        assert_n(n)
+        HM = 0b00001111
+        ret = (n - 1) % 0x100
+        self.SET_FLAG('S', ret & 0b10000000)
+        self.SET_FLAG('Z', ret == 0x00)
+        self.SET_FLAG('5', ret & 0b00100000)
+        self.SET_FLAG('H', (ret & HM) + (n & HM) > HM)
+        self.SET_FLAG('3', ret & 0b00001000)
+        self.SET_FLAG('V', n == 0x80)
+        self.SET_FLAG('N', True)
+        return ret
 
     # 16 bit arithmetic
     def INC_PC(self, n=1):

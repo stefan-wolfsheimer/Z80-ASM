@@ -267,27 +267,170 @@ def ADD_A_ref_index_plus_d(cpu, ii):
     cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
 
 def ADC_A_r(cpu, r):
-    cpu.ADD_A_n(cpu.GET_r(r), 1)
+    cpu.ADD_A_n(cpu.GET_r(r), cpu.GET_FLAG('C'))
 
 def ADC_A_n(cpu):
-    cpu.ADD_A_n(cpu.GET_ref_PC_plus_d(1), 1)
+    cpu.ADD_A_n(cpu.GET_ref_PC_plus_d(1), cpu.GET_FLAG('C'))
 
 def ADC_A_ref_HL(cpu):
-    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_HL()), 1)
+    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_HL()), cpu.GET_FLAG('C'))
 
 def ADC_A_ref_index_plus_d(cpu, ii):
     d = n2d(cpu.GET_ref_PC_plus_d(2))
-    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)), 1)
+    cpu.ADD_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)), cpu.GET_FLAG('C'))
+
+def SUB_A_r(cpu, r):
+    cpu.SUB_A_n(cpu.GET_r(r))
+
+def SUB_A_n(cpu):
+    cpu.SUB_A_n(cpu.GET_ref_PC_plus_d(1))
+
+def SUB_A_ref_HL(cpu):
+    cpu.SUB_A_n(cpu.GET_ref_nn(cpu.GET_HL()))
+
+def SUB_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.SUB_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
+
+def SBC_A_r(cpu, r):
+    cpu.SUB_A_n(cpu.GET_r(r), cpu.GET_FLAG('C'))
+
+def SBC_A_n(cpu):
+    cpu.SUB_A_n(cpu.GET_ref_PC_plus_d(1), cpu.GET_FLAG('C'))
+
+def SBC_A_ref_HL(cpu):
+    cpu.SUB_A_n(cpu.GET_ref_nn(cpu.GET_HL()), cpu.GET_FLAG('C'))
+
+def SBC_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.SUB_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)), cpu.GET_FLAG('C'))
+
+def AND_A_r(cpu, r):
+    # todo: implement AND_A_n
+    cpu.AND_A_n(cpu.GET_r(r))
+
+def AND_A_n(cpu):
+    cpu.AND_A_n(cpu.GET_ref_PC_plus_d(1))
+
+def AND_A_ref_HL(cpu):
+    cpu.AND_A_n(cpu.GET_ref_nn(cpu.GET_HL()))
+
+def AND_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.AND_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
+
+def OR_A_r(cpu, r):
+    # todo: implement OR_A_n
+    cpu.OR_A_n(cpu.GET_r(r))
+
+def OR_A_n(cpu):
+    cpu.OR_A_n(cpu.GET_ref_PC_plus_d(1))
+
+def OR_A_ref_HL(cpu):
+    cpu.OR_A_n(cpu.GET_ref_nn(cpu.GET_HL()))
+
+def OR_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.OR_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
+
+def XOR_A_r(cpu, r):
+    # todo: implement XOR_A_n
+    cpu.XOR_A_n(cpu.GET_r(r))
+
+def XOR_A_n(cpu):
+    cpu.XOR_A_n(cpu.GET_ref_PC_plus_d(1))
+
+def XOR_A_ref_HL(cpu):
+    cpu.XOR_A_n(cpu.GET_ref_nn(cpu.GET_HL()))
+
+def XOR_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.XOR_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
+
+def CP_A_r(cpu, r):
+    cpu.CP_A_n(cpu.GET_r(r))
+
+def CP_A_n(cpu):
+    cpu.CP_A_n(cpu.GET_ref_PC_plus_d(1))
+
+def CP_A_ref_HL(cpu):
+    cpu.CP_A_n(cpu.GET_ref_nn(cpu.GET_HL()))
+
+def CP_A_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    cpu.CP_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
+
+def INC_r(cpu, r):
+    cpu.LD_r_n(r, cpu.INC_n(cpu.GET_r(r)))
+
+def INC_ref_HL(cpu):
+    cpu.LD_ref_HL_n(cpu.INC_n(cpu.GET_ref_nn(cpu.GET_HL())))
+
+def INC_ref_index_plus_d(cpu):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.INC_n(cpu.GET_ref_nn(nn)))
+
+def DEC_r(cpu):
+    cpu.LD_r_n(r, cpu.DEC_n(cpu.GET_r(r)))
+
+def DEC_ref_HL(cpu):
+    cpu.LD_ref_HL_n(cpu.DEC_n(cpu.GET_ref_nn(cpu.GET_HL())))
+
+def DEC_ref_index_plus_d(cpu):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.DEC_n(cpu.GET_ref_nn(nn)))
+
 
 EIGHT_BIT_ARITHMETIC_GROUP = [
-    ("ADD A, r",        ("10000{0}"),             4, "A <- A + {0}",       ADD_A_r),
-    ("ADD A, n",        (0xc6, "n"),              7, "A <- A + n",         ADD_A_n),
-    ("ADD A, (HL)",     (0x86),                   7, "A <- A + (HL)",      ADD_A_ref_HL),
-    ("ADD A, (ii + d)", ("11{0}101", 0x86, "d"),  19, "A <- A + ({0}+d)",  ADD_A_ref_index_plus_d),
-    ("ADC A, r",        ("10001{0}"),             4, "A <- A + {0} + CY",  ADC_A_r),
-    ("ADC A, n",        (0xce, "n"),              7, "A <- A + n",         ADC_A_n),
-    ("ADC A, (HL)",     (0x8e),                   7, "A <- A + (HL)",      ADC_A_ref_HL),
-    ("ADC A, (ii + d)", ("11{0}101", 0x8e, "d"),  19, "A <- A + ({0}+d)",  ADC_A_ref_index_plus_d)]
+    ("ADD A, r",        ("10000{0}"),             4,  "A <- A + {0}",               ADD_A_r),
+    ("ADD A, n",        (0xc6, "n"),              7,  "A <- A + n",                 ADD_A_n),
+    ("ADD A, (HL)",     (0x86),                   7,  "A <- A + (HL)",              ADD_A_ref_HL),
+    ("ADD A, (ii + d)", ("11{0}101", 0x86, "d"),  19, "A <- A + ({0}+d)",           ADD_A_ref_index_plus_d),
+
+    ("ADC A, r",        ("10001{0}"),             4,  "A <- A + {0} + CY",          ADC_A_r),
+    ("ADC A, n",        (0xce, "n"),              7,  "A <- A + n",                 ADC_A_n),
+    ("ADC A, (HL)",     (0x8e),                   7,  "A <- A + (HL)",              ADC_A_ref_HL),
+    ("ADC A, (ii + d)", ("11{0}101", 0x8e, "d"),  19, "A <- A + ({0}+d)",           ADC_A_ref_index_plus_d),
+
+    ("SUB A, r",        ("10010{0}"),             4,  "A <- A - {0}",               SUB_A_r),
+    ("SUB A, n",        (0xd6, "n"),              7,  "A <- A - n",                 SUB_A_n),
+    ("SUB A, (HL)",     (0x96),                   7,  "A <- A - (HL)",              SUB_A_ref_HL),
+    ("SUB A, (ii + d)", ("11{0}101", 0x96, "d"),  19, "A <- A - ({0}+d)",           SUB_A_ref_index_plus_d),
+
+    ("SBC A, r",        ("10011{0}"),             4,  "A <- A - {0} - CY",          SBC_A_r),
+    ("SBC A, n",        (0xde, "n"),              7,  "A <- A - n - CY",            SBC_A_n),
+    ("SBC A, (HL)",     (0x9e),                   7,  "A <- A - (HL) - CY",         SBC_A_ref_HL),
+    ("SBC A, (ii + d)", ("11{0}101", 0x9e, "d"),  19, "A <- A - ({0}+d)",           SBC_A_ref_index_plus_d),
+
+    ("AND A, r",        ("10100{0}"),             4,  "A <- A AND {0}",             AND_A_r),
+    ("AND A, n",        (0xe6, "n"),              7,  "A <- A AND n",               AND_A_n),
+    ("AND A, (HL)",     (0xa6),                   7,  "A <- A AND (HL)",            AND_A_ref_HL),
+    ("AND A, (ii + d)", ("11{0}101", 0xa6, "d"),  19, "A <- A AND ({0}+d)",         AND_A_ref_index_plus_d),
+
+    ("OR A, r",         ("10110{0}"),             4,  "A <- A OR {0}",              OR_A_r),
+    ("OR A, n",         (0xf6, "n"),              7,  "A <- A OR n",                OR_A_n),
+    ("OR A, (HL)",      (0xb6),                   7,  "A <- A OR (HL)",             OR_A_ref_HL),
+    ("OR A, (ii + d)",  ("11{0}101", 0xb6, "d"),  19, "A <- A OR ({0}+d)",          OR_A_ref_index_plus_d),
+
+    ("XOR A, r",        ("10101{0}"),             4,  "A <- A XOR {0}",             XOR_A_r),
+    ("XOR A, n",        (0xee, "n"),              7,  "A <- A XOR n",               XOR_A_n),
+    ("XOR A, (HL)",     (0xae),                   7,  "A <- A XOR (HL)",            XOR_A_ref_HL),
+    ("XOR A, (ii + d)", ("11{0}101", 0xae, "d"),  19, "A <- A XOR ({0}+d)",         XOR_A_ref_index_plus_d),
+
+    ("CP r",            ("10111{0}"),             4,  "A - {0}",                    CP_A_r),
+    ("CP n",            (0xfe, "n"),              7,  "A - n",                      CP_A_n),
+    ("CP (HL)",         (0xbe),                   7,  "A - (HL)",                   CP_A_ref_HL),
+    ("CP (ii + d)",     ("11{0}101", 0xbe, "d"),  19, "A - ({0}+d)",                CP_A_ref_index_plus_d),
+
+    ("INC r",           ("00{0}100"),             4,  "{0} <- {0} + 1",             INC_r),
+    ("INC (HL)",        (0x34),                   11, "(HL) < (HL) + 1",            INC_ref_HL),
+    ("INC (ii + d)",    ("11{0}101", 0x34, "d"),  23, "({0} + d) <- ({0} + d) + 1", INC_ref_index_plus_d),
+
+    ("DEC r",           ("00{0}101"),             4,  "{0} <- {0} + 1",             DEC_r),
+    ("DEC (HL)",        (0x35),                   11, "(HL) < (HL) + 1",            DEC_ref_HL),
+    ("DEC (ii + d)",    ("11{0}101", 0x35, "d"),  23, "({0} + d) <- ({0} + d) + 1", DEC_ref_index_plus_d)]
 
 ################################################################################
 #
