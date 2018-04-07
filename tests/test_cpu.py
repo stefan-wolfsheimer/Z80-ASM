@@ -271,6 +271,19 @@ class TestCPU(unittest.TestCase):
             self.assertEqual(n, t[1])
             self.assertEqual(cpu.GET_FLAGS('V'), t[2])
 
+    # 16 bit arithmetic
+    def test_ADD_ii_nn(self):
+        # todo add more edge cases
+        tests = [(0x0000, 0x0000, 0, 0x00000, '')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_ii_nn('HL', t[0])
+            cpu.SET_FLAG('C', t[2])
+            cpu.ADD_ii_nn('HL', t[1])
+            self.assertEqual(cpu.GET_HL(), t[3])
+            self.assertEqual(cpu.GET_FLAGS('V'), t[4])
+
     # increasing / decreasing registers
     def test_INC_PC(self):
         cpu = CPU()
@@ -303,6 +316,92 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu.GET_BC(), 0xffff)
         cpu.DEC_ii('BC')
         self.assertEqual(cpu.GET_BC(), 0xfffe)
+
+    # rotate and shift
+    def test_RL(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            self.assertEqual(cpu.shift_left_n(t[0], 'RL'), t[1])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+
+    def test_RLC(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            self.assertEqual(cpu.shift_left_n(t[0], 'RLC'), t[1])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+
+    def test_SLA(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            self.assertEqual(cpu.shift_left_n(t[0], 'SLA'), t[1])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+
+    def test_RR(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            self.assertEqual(cpu.shift_right_n(t[0], 'RR'), t[1])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+
+    def test_RRC(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            self.assertEqual(cpu.shift_right_n(t[0], 'RRC'), t[1])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+
+    def test_SRL(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            self.assertEqual(cpu.shift_right_n(t[0], 'SRL'), t[1])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+
+    def test_SRA(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            self.assertEqual(cpu.shift_right_n(t[0], 'SRA'), t[1])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+
+    def test_RLD(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            self.assertEqual(cpu.RLD_n(t[1]), t[3])
+            self.assertEqual(cpu.GET_A(), t[2])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[4])
+
+    def test_RRD(self):
+        # todo add more edge cases
+        tests = [(0x00, 0x00, 0x00, 0x00, 'ZP')]
+        cpu = CPU()
+        for t in tests:
+            cpu.LD_F_n(0x00)
+            cpu.LD_A_n(t[0])
+            self.assertEqual(cpu.RRD_n(t[1]), t[3])
+            self.assertEqual(cpu.GET_A(), t[2])
+            self.assertEqual(cpu.GET_FLAGS('P'), t[4])
 
 
 if __name__ == '__main__':

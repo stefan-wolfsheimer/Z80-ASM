@@ -5,20 +5,24 @@ sys.path.insert(0,
 from z80.instructions import InstructionSet
 
 
+def format_code(code):
+    if isinstance(code, int):
+        return "{:02x}".format(code)
+    else:
+        return "{:2}".format(code)
+
+def list_instructions(instructions, codes=[]):
+    if isinstance(instructions, dict):
+        for k in sorted(instructions.keys()):
+            list_instructions(instructions[k], codes + [k])
+    else:
+        fcodes = [format_code(code) for code in codes]
+        print("{:12} {: <15} {}".format(" ".join(fcodes), instructions.format(), ""))
+
+
 def main():
     instr_set = InstructionSet()
-    for code1 in range(0, 0x100):
-        if code1 in instr_set.instructions:
-            if isinstance(instr_set.instructions[code1], dict):
-                for code2 in range(0, 0x100):
-                    if code2 in instr_set.instructions[code1]:
-                        instr = instr_set.instructions[code1][code2]
-                        print("{:02x} {:02x} {: <15} {}".format(code1,
-                                                                code2,
-                                                                instr.format(), ""))
-            else:
-                instr = instr_set.instructions[code1]
-                print("{:02x}    {: <15} {}".format(code1, instr.format(), ""))
+    list_instructions(instr_set.instructions)
 
 if __name__ == "__main__":
     main()

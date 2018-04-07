@@ -77,10 +77,10 @@ EIGHT_BIT_LOAD_GROUP = [
     ("LD (ii + d), n", ("11{0}101", 0x36, "d", "n"),  1, "({0}+d) <- n",    LD_ref_index_plus_d_n),
     ("LD A, (BC)",     (0x0a),                        1, "A <- (BC)",       LD_A_ref_BC),
     ("LD A, (DE)",     (0x1a),                        1, "A <- (DE)",       LD_A_ref_DE),
-    ("LD A, (nn)",     (0x3a, "n_l", "n_h"),          1, "A <- (nn)",       LD_A_ref_nn),
+    ("LD A, (nn)",     (0x3a, "nl", "nh"),            1, "A <- (nn)",       LD_A_ref_nn),
     ("LD (BC), A",     (0x02),                        1, "(BC) <- A",       LD_ref_BC_A),
     ("LD (DE), A",     (0x12),                        1, "(DE) <- A",       LD_ref_DE_A),
-    ("LD (nn), A",     (0x32, "n_l", "n_h"),          1, "(nn) <- A",       LD_ref_nn_A),
+    ("LD (nn), A",     (0x32, "nl", "nh"),            1, "(nn) <- A",       LD_ref_nn_A),
     ("LD A, I",        (0xed, 0x57),                  1, "A <- I",          LD_A_I),
     ("LD A, R",        (0xed, 0x5f),                  1, "A <- R",          LD_A_R),
     ("LD I, A",        (0xed, 0x47),                  1, "I <- A",          LD_I_A),
@@ -138,20 +138,20 @@ def POP_ii(cpu, ii):
     cpu.INC_SP(2)
 
 SIXTEEN_BIT_LOAD_GROUP = [
-    ("LD dd, nn",      ("00{0}0001", "n_l", "n_h"),       1, "{0} <- nn",                                    LD_dd_nn),
-    ("LD ii, nn",      ("11{0}101", 0x21, "n_l", "n_h"),  1, "{0} <- nn",                                    LD_ii_nn),
-    ("LD HL, (nn)",    (0x2a, "n_l", "n_h"),              1, "H <- (nn+1), L <- (nn)",                       LD_HL_ref_nn),
-    ("LD dd, (nn)",    (0xed, "01{0}1011", "n_l", "n_h"), 1, "dd_h <- (nn+1), dd_l <- (nn)",                 LD_dd_ref_nn),
-    ("LD ii, (nn)",    ("11{0}101", 0x2a, "n_l", "n_h"),  1, "{0}_h <- (nn+1), {0}_l <- (nn)",               LD_ii_ref_nn),
-    ("LD (nn), HL",    (0x22, "n_l", "n_h"),              1, "(nn+1) <- H, (nn) <- L",                       LD_ref_nn_HL),
-    ("LD (nn), dd",    (0xed, "01{0}0011", "n_l", "n_h"), 1, "(nn+1) <- dd_h, (nn) <- dd_l",                 LD_ref_nn_dd),
-    ("LD (nn), ii",    ("11{0}101", 0x22, "n_l", "n_h"),  1, "(nn+1) <- {0}_h, (nn) <- {0}_l",               LD_ref_nn_ii),
-    ("LD SP, HL",      (0xf9),                            1, "SP <- HL",                                     LD_SP_HL),
-    ("LD SP, ii",      ("11{0}101", 0xf9),                1, "SP <- {0}",                                    LD_SP_ii),
-    ("PUSH qq",        ("11{0}0101"),                     1, "(SP-1) <- qq_h, (SP-2) <- qq_l, SP <- SP-2",   PUSH_qq),
-    ("PUSH ii",        ("11{0}101", 0xe5),                1, "(SP-1) <- {0}_h, (SP-2) <- {0}_l, SP <- SP-2", PUSH_ii),
-    ("POP qq",         ("11{0}0001"),                     1, "qq_h <- (SP+1), qq_l <- (SP), SP <- SP+2",     POP_qq),
-    ("POP ii",         ("11{0}101", 0xe1),                1, "{0}_h <- (SP+1), {0}_l <- (SP), SP <- SP+2",   POP_ii)
+    ("LD dd, nn",      ("00{0}0001", "nl", "nh"),       1, "{0} <- nn",                                    LD_dd_nn),
+    ("LD ii, nn",      ("11{0}101", 0x21, "nl", "nh"),  1, "{0} <- nn",                                    LD_ii_nn),
+    ("LD HL, (nn)",    (0x2a, "nl", "nh"),              1, "H <- (nn+1), L <- (nn)",                       LD_HL_ref_nn),
+    ("LD dd, (nn)",    (0xed, "01{0}1011", "nl", "nh"), 1, "dd_h <- (nn+1), dd_l <- (nn)",                 LD_dd_ref_nn),
+    ("LD ii, (nn)",    ("11{0}101", 0x2a, "nl", "nh"),  1, "{0}_h <- (nn+1), {0}_l <- (nn)",               LD_ii_ref_nn),
+    ("LD (nn), HL",    (0x22, "nl", "nh"),              1, "(nn+1) <- H, (nn) <- L",                       LD_ref_nn_HL),
+    ("LD (nn), dd",    (0xed, "01{0}0011", "nl", "nh"), 1, "(nn+1) <- dd_h, (nn) <- dd_l",                 LD_ref_nn_dd),
+    ("LD (nn), ii",    ("11{0}101", 0x22, "nl", "nh"),  1, "(nn+1) <- {0}_h, (nn) <- {0}_l",               LD_ref_nn_ii),
+    ("LD SP, HL",      (0xf9),                          1, "SP <- HL",                                     LD_SP_HL),
+    ("LD SP, ii",      ("11{0}101", 0xf9),              1, "SP <- {0}",                                    LD_SP_ii),
+    ("PUSH qq",        ("11{0}0101"),                   1, "(SP-1) <- qq_h, (SP-2) <- qq_l, SP <- SP-2",   PUSH_qq),
+    ("PUSH ii",        ("11{0}101", 0xe5),              1, "(SP-1) <- {0}_h, (SP-2) <- {0}_l, SP <- SP-2", PUSH_ii),
+    ("POP qq",         ("11{0}0001"),                   1, "qq_h <- (SP+1), qq_l <- (SP), SP <- SP+2",     POP_qq),
+    ("POP ii",         ("11{0}101", 0xe1),              1, "{0}_h <- (SP+1), {0}_l <- (SP), SP <- SP+2",   POP_ii)
 ]
 
 ################################################################################
@@ -246,7 +246,35 @@ BLOCK_TRANSFER_GROUP = [
 # Search group
 #
 ################################################################################
-# todo
+# todo: make t-states dynamic, depending on the result
+# T-states for CPIR and CPDR: if BC = 0 and A=(HL): 16
+def CPI(cpu):
+    cpu.CP_A_n(cpu.GET_ref_nn(cpu.GET_HL()), False)
+    cpu.SET_FLAG('V', cpu.GET_BC() != 0x00001)
+    cpu.INC_ii('HL')
+    cpu.DEC_ii('BC')
+
+def CPIR(cpu):
+    CPI(cpu)
+    if cpu.GET_BC() != 0x0000:
+        cpu.DEC_PC(2)    
+
+def CPD(cpu):
+    cpu.CP_A_n(cpu.GET_ref_nn(cpu.GET_HL()), False)
+    cpu.SET_FLAG('V', cpu.GET_BC() != 0x00001)
+    cpu.DEC_ii('HL')
+    cpu.DEC_ii('BC')
+
+def CPDR(cpu):
+    CPD(cpu)
+    if cpu.GET_BC() != 0x0000:
+        cpu.DEC_PC(2)    
+
+SEARCH_GROUP = [
+    ("CPI",  (0xed, 0xa1), 16, "A - (HL), HL <- HL + 1, BC <- BC - 1", CPI),
+    ("CPIR", (0xed, 0xb1), 21, "A - (HL), HL <- HL + 1, BC <- BC - 1", CPIR),
+    ("CPD",  (0xed, 0xa9), 16, "A - (HL), HL <- HL - 1, BC <- BC - 1", CPD),
+    ("CPDR", (0xed, 0xb9), 16, "A - (HL), HL <- HL - 1, BC <- BC - 1", CPDR)]
 
 ################################################################################
 #
@@ -306,7 +334,6 @@ def SBC_A_ref_index_plus_d(cpu, ii):
     cpu.SUB_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)), cpu.GET_FLAG('C'))
 
 def AND_A_r(cpu, r):
-    # todo: implement AND_A_n
     cpu.AND_A_n(cpu.GET_r(r))
 
 def AND_A_n(cpu):
@@ -320,7 +347,6 @@ def AND_A_ref_index_plus_d(cpu, ii):
     cpu.AND_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
 
 def OR_A_r(cpu, r):
-    # todo: implement OR_A_n
     cpu.OR_A_n(cpu.GET_r(r))
 
 def OR_A_n(cpu):
@@ -334,7 +360,6 @@ def OR_A_ref_index_plus_d(cpu, ii):
     cpu.OR_A_n(cpu.GET_ref_nn(cpu.GET_ii_plus_d(ii, d)))
 
 def XOR_A_r(cpu, r):
-    # todo: implement XOR_A_n
     cpu.XOR_A_n(cpu.GET_r(r))
 
 def XOR_A_n(cpu):
@@ -443,4 +468,191 @@ def NOP(cpu):
 GENERAL_PURPOSE = [
     ("NOP", (0x00), 1, "", NOP)
 ]
+
+################################################################################
+#
+# 16 bit arithmetic
+#
+################################################################################
+def ADD_HL_ss(cpu, ss):
+    cpu.ADD_ii_nn('HL', cpu.GET_ss(ss))
+
+def ADC_HL_ss(cpu, ss):
+    cpu.ADD_ii_nn('HL', cpu.GET_ss(ss), cpu.GET_FLAG('C'))
+
+def SBC_HL_ss(cpu, ss):
+    cpu.SUB_ii_nn('HL', cpu.GET_ss(ss), cpu.GET_FLAG('C'))
+
+def ADD_IX_pp(cpu, pp):
+    cpu.ADD_ii_nn('IX', cpu.GET_ii(pp))
+
+def ADD_IY_rr(cpu, rr):
+    cpu.ADD_ii_nn('IY', cpu.GET_ii(rr))
+
+def INC_ss(cpu, ss):
+    cpu.INC_ii(ss)
+
+def INC_ii(cpu, ii):
+    cpu.INC_ii(ii)
+
+def DEC_ss(cpu, ss):
+    cpu.DEC_ii(ss)
+
+def DEC_ii(cpu, ii):
+    cpu.DEC_ii(ii)
+
+SIXTEEN_BIT_ARITHMETIC_GROUP = [
+    ("ADD HL, ss", ("00{0}1001"),       11, "HL <- HL + {0}",      ADD_HL_ss),
+    ("ADC HL, ss", (0xed, "01{0}1010"), 15, "HL <- HL + {0} + CY", ADC_HL_ss),
+    ("SBC HL, ss", (0xed, "01{0}0010"), 15, "HL <- HL - {0} - CY", SBC_HL_ss),
+    ("ADD IX, pp", (0xdd, "00{0}1001"), 15, "IX <- IX + {0}",      ADD_IX_pp),
+    ("ADD IY, rr", (0xfd, "00{0}1001"), 15, "IY <- IY + {0}",      ADD_IY_rr),
+    ("INC ss",     ("00{0}0011"),        6, "{0} <- {0} + 1",      INC_ss),
+    ("INC ii",     ("11{0}101", 0x23),  10, "{0} <- {0} + 1",      INC_ii),
+    ("DEC ss",     ("00{0}1011"),        6, "{0} <- {0} - 1",      DEC_ss),
+    ("DEC ii",     ("11{0}101", 0x2b),  10, "{0} <- {0} - 1",      DEC_ii)]
+
+################################################################################
+#
+# rotate and shift group
+#
+################################################################################
+## RLC ##
+def RLC_r(cpu, r):
+    cpu.LD_r_n(r, cpu.shift_left_n(cpu.GET_r(r), 'RLC'))
+
+def RLC_ref_HL(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.shift_left_n(cpu.GET_ref_nn(nn), 'RLC'))
+
+def RLC_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.shift_left_n(cpu.GET_ref_nn(nn), 'RLC'))
+
+## RL ##
+def RL_r(cpu, r):
+    cpu.LD_r_n(r, cpu.shift_left_n(cpu.GET_r(r), 'RL'))
+
+def RL_ref_HL(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.shift_left_n(cpu.GET_ref_nn(nn), 'RL'))
+
+def RL_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.shift_left_n(cpu.GET_ref_nn(nn), 'RL'))
+
+## SLA ##
+def SLA_r(cpu, r):
+    cpu.LD_r_n(r, cpu.shift_left_n(cpu.GET_r(r), 'SLA'))
+
+def SLA_ref_HL(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.shift_left_n(cpu.GET_ref_nn(nn), 'SLA'))
+
+def SLA_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.shift_left_n(cpu.GET_ref_nn(nn), 'SLA'))
+
+## RRC ##
+def RRC_r(cpu, r):
+    cpu.LD_r_n(r, cpu.shift_right_n(cpu.GET_r(r), 'RRC'))
+
+def RRC_ref_HL(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'RRC'))
+
+def RRC_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'RRC'))
+
+## RR ##
+def RR_r(cpu, r):
+    cpu.LD_r_n(r, cpu.shift_right_n(cpu.GET_r(r), 'RR'))
+
+def RR_ref_HL(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'RR'))
+
+def RR_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'RR'))
+
+## SRA ##
+def SRA_r(cpu, r):
+    cpu.LD_r_n(r, cpu.shift_right_n(cpu.GET_r(r), 'SRA'))
+
+def SRA_ref_HL(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'SRA'))
+
+def SRA_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'SRA'))
+
+## SRL ##
+def SRL_r(cpu, r):
+    cpu.LD_r_n(r, cpu.shift_right_n(cpu.GET_r(r), 'SRL'))
+
+def SRL_ref_HL(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'SRL'))
+
+def SRL_ref_index_plus_d(cpu, ii):
+    d = n2d(cpu.GET_ref_PC_plus_d(2))
+    nn = cpu.GET_ii_plus_d(ii, d)
+    cpu.LD_ref_nn_n(nn, cpu.shift_right_n(cpu.GET_ref_nn(nn), 'SRL'))
+
+## RLD RRD ##
+def RLD(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.RLD_n(cpu.GET_ref_nn(nn)))
+
+def RRD(cpu):
+    nn = cpu.GET_HL()
+    cpu.LD_ref_nn_n(nn, cpu.RRD_n(cpu.GET_ref_nn(nn)))
+
+
+ROTATE_AND_SHIFT_GROUP = [
+    ("RLCA",       (0x07),                         4, "A0 << A7, CY << A",                   lambda cpu: RLC_r(cpu, 'A')),
+    ("RLA",        (0x17),                         4, "A0 << CY, CY << A",                   lambda cpu: RL_r(cpu, 'A')),
+    ("RRCA",       (0x0f),                         4, "A0 >> A7, A >> CY",                   lambda cpu: RRC_r(cpu, 'A')),
+    ("RRA",        (0x1f),                         4, "CY >> A7, A >> CY",                   lambda cpu: RR_r(cpu, 'A')),
+
+    ("RLC r",      (0xcb, "00000{0}"),             8, "{0}0 << {0}7, CY << {0}",             RLC_r),
+    ("RLC (HL)",   (0xcb, 0x06),                  15, "(HL)0 << (HL)7, CY << (HL)",          RLC_ref_HL),
+    ("RLC (ii+d)", ("11{0}101", 0xcb, "d", 0x06), 23, "({0}+d)0 << ({0}+d)7, CY << ({0}+d)", RLC_ref_index_plus_d),
+
+    ("RL r",       (0xcb, "00010{0}"),             8, "{0}0 << CY, CY << {0}",               RL_r),
+    ("RL (HL)",    (0xcb, 0x16),                  15, "(HL)0 << CY, CY << (HL)",             RL_ref_HL),
+    ("RL (ii+d)",  ("11{0}101", 0xcb, "d", 0x16), 23, "({0}+d)0 << CY, CY << ({0}+d)",       RL_ref_index_plus_d),
+
+    ("RRC r",      (0xcb, "00001{0}"),             8, "{0}0 >> {0}7, {0} >> CY",             RRC_r),
+    ("RRC (HL)",   (0xcb, 0x0e),                  15, "(HL)0 >> (HL)7, (HL) >> CY",          RRC_ref_HL),
+    ("RRC (ii+d)", ("11{0}101", 0xcb, "d", 0x0e), 23, "({0}+d)0 >> ({0}+d)7, ({0}+d) >> CY", RRC_ref_index_plus_d),
+
+    ("RR r",       (0xcb, "00011{0}"),             8, "{0}0 >> CY, {0} >> CY",               RR_r),
+    ("RR (HL)",    (0xcb, 0x1e),                  15, "(HL)0 >> CY, (HL) >> CY",             RR_ref_HL),
+    ("RR (ii+d)",  ("11{0}101", 0xcb, "d", 0x1e), 23, "({0}+d)0 >> CY, CY >> ({0}+d)",       RR_ref_index_plus_d),
+
+    ("SLA r",      (0xcb, "00100{0}"),             8, "CY << {0}7, {0} << 0",                SLA_r),
+    ("SLA (HL)",   (0xcb, 0x26),                  15, "CY << (HL)7, (HL) << 0",              SLA_ref_HL),
+    ("SLA (ii+d)", ("11{0}101", 0xcb, "d", 0x26), 23, "CY << ({0}+d)7, ({0}+d) << 0",        SLA_ref_index_plus_d),
+
+    ("SRA r",      (0xcb, "00101{0}"),             8, "{0}7 >> {0}7, {0} >> CY",             SRA_r),
+    ("SRA (HL)",   (0xcb, 0x2e),                  15, "(HL)7 >> (HL)7, (HL) >> CY",          SRA_ref_HL),
+    ("SRA (ii+d)", ("11{0}101", 0xcb, "d", 0x2e), 23, "({0}+d)7 >> ({0}+d)7, ({0}+d) >> CY", SRA_ref_index_plus_d),
+
+    ("SRL r",      (0xcb, "00111{0}"),             8, "0 >> {0}7, {0} >> CY",                SRL_r),
+    ("SRL (HL)",   (0xcb, 0x3e),                  15, "0 >> (HL)7, (HL) >> CY",              SRL_ref_HL),
+    ("SRL (ii+d)", ("11{0}101", 0xcb, "d", 0x3e), 23, "0 >> ({0}+d)7, ({0}+d) >> CY",        SRL_ref_index_plus_d),
+
+    ("RLD",        (0xed, 0x6f),                  18, "RLD",                                 RLD),
+    ("RRD",        (0xed, 0x67),                  18, "RRD",                                 RRD)]
+
 

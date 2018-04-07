@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # from z80.instructions import Instruction
-import z80.instr_templates as instr_templates
+import z80.instr_templates as it
 from z80.instr_template_expansion import expand_template
 
 
@@ -47,18 +47,35 @@ class Instruction(object):
 class InstructionSet(object):
     def __init__(self):
         self.instructions = {}
-        self.add_instruction_group(instr_templates.EIGHT_BIT_LOAD_GROUP,
+        self.add_instruction_group(it.EIGHT_BIT_LOAD_GROUP,
                                    "8 bit load group")
-        self.add_instruction_group(instr_templates.SIXTEEN_BIT_LOAD_GROUP,
+        self.add_instruction_group(it.SIXTEEN_BIT_LOAD_GROUP,
                                    "16 bit load group")
-        self.add_instruction_group(instr_templates.EXCHANGE_GROUP,
+        self.add_instruction_group(it.EXCHANGE_GROUP,
                                    "exchange group")
-        self.add_instruction_group(instr_templates.GENERAL_PURPOSE,
-                                   "general purpose group")
-        self.add_instruction_group(instr_templates.BLOCK_TRANSFER_GROUP,
+        self.add_instruction_group(it.BLOCK_TRANSFER_GROUP,
                                    "block transfer group")
+        self.add_instruction_group(it.SEARCH_GROUP,
+                                   "search group")
+        self.add_instruction_group(it.EIGHT_BIT_ARITHMETIC_GROUP,
+                                   "8 bit arithmetic group")
+        self.add_instruction_group(it.GENERAL_PURPOSE,
+                                   "general purpose group")
+        self.add_instruction_group(it.SIXTEEN_BIT_ARITHMETIC_GROUP,
+                                   "16 bit arithmetic group")
+        self.add_instruction_group(it.ROTATE_AND_SHIFT_GROUP,
+                                   "rotate and shift group")
 
     def add_instruction_group(self, instr_set, grp):
+        def set_code(instructions, codes, instr):
+            if len(codes) == 1:
+                instructions[codes[0]] = instr
+                return instructions
+            else:
+                if not codes[0] in instructions:
+                    instructions[codes[0]] = {}
+                return set_code(instructions[codes[0]], codes[1:], instr)
+
         for entry in instr_set:
             for expanded in expand_template(entry):
                 instr = Instruction(instr=expanded['instr'],
@@ -67,14 +84,10 @@ class InstructionSet(object):
                                     tstates=expanded['tstates'],
                                     operation=expanded['operation'],
                                     group=grp)
-                if len(instr.opcode) > 1 and isinstance(instr.opcode[1], int):
-                    if instr.opcode[0] not in self.instructions:
-                        self.instructions[instr.opcode[0]] = {}
-                    self.instructions[instr.opcode[0]][instr.opcode[1]] = instr
-                else:
-                    self.instructions[instr.opcode[0]] = instr
+                set_code(self.instructions, instr.opcode, instr)
 
     def fetch(self, cpu):
+        # todo 4 byte instructions
         code1 = cpu.GET_ref_PC_plus_d(0)
         if code1 in self.instructions:
             if isinstance(self.instructions[code1], dict):

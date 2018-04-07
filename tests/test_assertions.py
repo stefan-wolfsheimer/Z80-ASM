@@ -27,6 +27,9 @@ from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
 from z80.assertions import assert_qq
+from z80.assertions import assert_pp
+from z80.assertions import assert_ss
+from z80.assertions import assert_rr
 from z80.assertions import assert_flag
 
 
@@ -102,6 +105,24 @@ class TestAssertions(unittest.TestCase):
         assert_qq('DE')
         assert_qq('HL')
         assert_qq('AF')
+
+    def test_assert_ss(self):
+        assert_ss('BC')
+        assert_ss('DE')
+        assert_ss('HL')
+        assert_ss('SP')
+
+    def test_assert_pp(self):
+        assert_pp('BC')
+        assert_pp('DE')
+        assert_pp('IX')
+        assert_pp('SP')
+
+    def test_assert_rr(self):
+        assert_rr('BC')
+        assert_rr('DE')
+        assert_rr('IY')
+        assert_rr('SP')
 
     def test_assert_flag(self):
         assert_flag('S')

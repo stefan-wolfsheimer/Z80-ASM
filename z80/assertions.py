@@ -67,6 +67,24 @@ def assert_qq(qq):
         raise ValueError("Invalid register pair %s" % str(qq))
 
 
+def assert_ss(ss):
+    pairs = ('BC', 'DE', 'HL', 'SP')
+    if not isinstance(ss, str) or ss not in pairs:
+        raise ValueError("Invalid register pair %s" % str(ss))
+
+
+def assert_pp(pp):
+    pairs = ('BC', 'DE', 'IX', 'SP')
+    if not isinstance(pp, str) or pp not in pairs:
+        raise ValueError("Invalid register pair %s" % str(pp))
+
+
+def assert_rr(rr):
+    pairs = ('BC', 'DE', 'IY', 'SP')
+    if not isinstance(rr, str) or rr not in pairs:
+        raise ValueError("Invalid register pair %s" % str(rr))
+
+
 def assert_index(index):
     if not isinstance(index, str) or index not in ('IX', 'IY'):
         raise ValueError("Invalid index register %s" % str(index))

@@ -26,6 +26,7 @@ from z80.assertions import assert_d
 from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_ii
+from z80.assertions import assert_ss
 from z80.assertions import assert_index
 from z80.assertions import assert_flag
 from z80.instructions import InstructionSet
@@ -230,6 +231,11 @@ class CPU(object):
     def GET_IR(self):
         return (self.I << 8) + self.R
 
+    def GET_ss(self, ss):
+        assert_ss(ss)
+        getter = getattr(self, 'GET_' + ss)
+        return getter()
+
     def GET_ii(self, ii):
         assert_ii(ii)
         getter = getattr(self, 'GET_' + ii)
@@ -342,23 +348,25 @@ class CPU(object):
         self.SET_FLAG('C', False)
         self.LD_A_n(a)
 
-    def CP_A_n(self, n):
+    def CP_A_n(self, n, set_C_V=True):
         assert_n(n)
         a = self.GET_A()
         n = (0x100 - n) % 0x100
         res = a + n
         res_modulo = res % 0x100
         HM = 0b00001111
-        MSB = 0b10000000
-        overflow = (a & MSB) == (n & MSB) and (res_modulo & MSB) != (a & MSB)
         self.SET_FLAG('S', res_modulo & 0b10000000)
         self.SET_FLAG('Z', res_modulo == 0x00)
         self.SET_FLAG('5', res_modulo & 0b00100000)
         self.SET_FLAG('H', (a & HM) + (n & HM) > HM)
         self.SET_FLAG('3', res_modulo & 0b00001000)
-        self.SET_FLAG('V', overflow)
         self.SET_FLAG('N', True)
-        self.SET_FLAG('C', res > 0x100)
+        if set_C_V:
+            MSB = 0b10000000
+            overflow = (a & MSB) == (n & MSB) and\
+                       (res_modulo & MSB) != (a & MSB)
+            self.SET_FLAG('C', res > 0x100)
+            self.SET_FLAG('V', overflow)
 
     def INC_n(self, n):
         assert_n(n)
@@ -415,3 +423,143 @@ class CPU(object):
         value = self.GET_ii(ii)
         value = (value - n) % CPU.MEMSIZE
         self.LD_ii_nn(ii, value)
+
+    def ADD_ii_nn(self, ii, nn, carry=0):
+        assert_ii(ii)
+        assert_nn(nn)
+        mm = self.GET_ii(ii)
+        res = mm + nn + carry
+        res_modulo = res % 0x10000
+        self.LD_ii_nn(ii, res_modulo)
+        HM = 0b0000111111111111
+        self.SET_FLAG('H', (mm & HM) + (nn & HM) + carry > HM)
+        self.SET_FLAG('C', res > 0x10000)
+
+    def SUB_ii_nn(self, ii, nn, carry=0):
+        assert_nn(nn)
+        self.ADD_ii_nn(ii, (0x10000 - nn) % 0x10000, carry)
+
+    # rotate and shift
+    def shift_left_n(self, n, method):
+        """ Bits of n are shifted left by one position.
+            Bit 7 is copied to flag C.
+            If method is 'RLC' bit 7 is also copied to 0.
+            If method is 'RL' the old value of C is copied to bit 0.
+            If method is 'SLA' bit 0 is unset.
+            Returns new value.
+        """
+        assert_n(n)
+        MSB = 0b10000000
+        carry = 1 if (MSB & n) else 0
+        if method == 'RLC':
+            n = (n << 1) | carry
+        elif method == 'RL':
+            n = (n << 1) | self.GET_FLAG('C')
+        elif method == 'SLA':
+            n = (n << 1)
+        else:
+            raise ValueError('Invalid cycle type ' + str(method))
+        self.SET_FLAG('S', n & 0b10000000)
+        self.SET_FLAG('Z', n == 0x00)
+        self.SET_FLAG('5', False)
+        self.SET_FLAG('H', False)
+        self.SET_FLAG('3', False)
+        self.SET_FLAG('P', parity(n))
+        self.SET_FLAG('N', False)
+        self.SET_FLAG('C', carry)
+        return n
+
+    def shift_right_n(self, n, method):
+        """ Bits of n are shifted right by one position.
+            Bit 0 is copied to flag C.
+            If method is 'RRC' bit 0 is also copied to 7.
+            If method is 'RR' the old value of C is copied to bit 7.
+            If method is 'SRL' bit 7 is unset.
+            If method is 'SRA' bit 7 is not changed.
+            Returns new value.
+        """
+        assert_n(n)
+        LSB = 0b00000001
+        MSB = 0b10000000
+        carry = MSB if (LSB & n) else 0
+        if method == 'RRC':
+            n = (n >> 1) | carry
+        elif method == 'RR':
+            n = (n >> 1) | (self.GET_FLAG('C') << 7)
+        elif method == 'SRL':
+            n = (n >> 1)
+        elif method == 'SRA':
+            n = (n >> 1) | (n & MSB)
+        else:
+            raise ValueError('Invalid cycle type ' + str(method))
+        self.SET_FLAG('S', n & 0b10000000)
+        self.SET_FLAG('Z', n == 0x00)
+        self.SET_FLAG('5', False)
+        self.SET_FLAG('H', False)
+        self.SET_FLAG('3', False)
+        self.SET_FLAG('P', parity(n))
+        self.SET_FLAG('N', False)
+        self.SET_FLAG('C', carry)
+        return n
+
+    def RLD_n(self, n):
+        """ The contents of bits 3,2,1,0 of n are copied to
+            the bits 7,6,5,4 of n.
+            The previous content of bits 7,6,5,4 are copied to
+            the bits 3,2,1,0 of A.
+            The previous contents of the bits 3,2,1,0 of A are copied
+            to the bits 3,2,1,0 of n.
+            Returns new value of n.
+        """
+        #         +----------+
+        # A       |  n      \|/
+        # 7..4 3..0  7..4 3..0
+        #     /|\    | /|\   |
+        #      +-----+  +----+
+        assert_n(n)
+        a = self.GET_A()
+        LSB = 0b00001111
+        MSB = 0b11110000
+        la = a & LSB
+        a = (a & MSB) | ((n & MSB) >> 4)
+        n = (n << 4) | la
+        self.LD_A_n(a)
+        self.SET_FLAG('S', a & 0b10000000)
+        self.SET_FLAG('Z', a == 0x00)
+        self.SET_FLAG('5', False)
+        self.SET_FLAG('H', False)
+        self.SET_FLAG('3', False)
+        self.SET_FLAG('P', parity(a))
+        self.SET_FLAG('N', False)
+        return n
+
+    def RRD_n(self, n):
+        """ The contents of bits 7,8,5,4 of n are copied to
+            the bits 3,2,1,0 of n.
+            The previous content of bits 3,2,1,0 are copied to
+            the bits 3,2,1,0 of A.
+            The previous contents of the bits 3,2,1,0 of A are copied
+            to the bits 7,2,1,0 of n.
+            Returns new value of n.
+        """
+        #         +----------+
+        # A      \|/ n       |
+        # 7..4 3..0  7..4 3..0
+        #      |    /|\ |   /|\
+        #      +-----+  +----+
+        assert_n(n)
+        a = self.GET_A()
+        LSB = 0b00001111
+        MSB = 0b11110000
+        la = a & LSB
+        a = (a & MSB) | (n & LSB)
+        n = (n >> 4) | (la << 4)
+        self.LD_A_n(a)
+        self.SET_FLAG('S', a & 0b10000000)
+        self.SET_FLAG('Z', a == 0x00)
+        self.SET_FLAG('5', False)
+        self.SET_FLAG('H', False)
+        self.SET_FLAG('3', False)
+        self.SET_FLAG('P', parity(a))
+        self.SET_FLAG('N', False)
+        return n
