@@ -34,6 +34,13 @@ class TestUntil(unittest.TestCase):
         self.assertFalse(util.parity(0x08))
         self.assertFalse(util.parity(0xfe))
 
+    def test_n2d(self):
+        self.assertEqual(util.n2d(0x00), 0)
+        self.assertEqual(util.n2d(0x7f), 127)
+        self.assertEqual(util.n2d(0x80), -128)
+        self.assertEqual(util.n2d(0x81), -127)
+        self.assertEqual(util.n2d(0xff), -1)
+
 
 if __name__ == '__main__':
     unittest.main()

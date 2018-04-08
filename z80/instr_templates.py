@@ -655,4 +655,16 @@ ROTATE_AND_SHIFT_GROUP = [
     ("RLD",        (0xed, 0x6f),                  18, "RLD",                                 RLD),
     ("RRD",        (0xed, 0x67),                  18, "RRD",                                 RRD)]
 
+BIT_SET_RESET_TEST_GROUP = [
+    ("BIT b, r",      (0xcb, "01{0}{1}"),                   8, "Z <- not({1}{0})",   lambda c, b, r: c.BIT_b_n(b, c.GET_r(r))),
+    ("BIT b, (HL)",   (0xcb, "01{0}110"),                  12, "Z <- not((HL){0})",  lambda c, b:    c.BIT_b_n(b, c.GET_ref_HL())),
+    ("BIT b, (ii+d)", ("11{1}101", 0xcb, "d", "01{0}110"), 20, "Z <- not(({1} +d))", lambda c, b, i: c.BIT_b_n(b, c.GET_ref_index_plus_d(i))),
+    ("SET b, r",      (0xcb, "11{0}{1}"),                   8, "{1}{0} <- 1",        lambda c, b, r: c.SET_b_r(b, r, 1)),
+    ("SET b, (HL)",   (0xcb, "11{0}110"),                  15, "(HL){0} <- 1",       lambda c, b:    c.SET_ref_nn(b, c.GET_HL(), 1)),
+    ("SET b, (ii+d)", ("11{1}101", 0xcb, "d", "11{0}110"), 23, "({1}+d){0} <- 0",    lambda c, b, i: c.SET_ref_nn(b, c.GET_index_plus_d(i), 1)),
+    ("RES b, r",      (0xcb, "10{0}{1}"),                   8, "{1}{0} <- 0",        lambda c, b, r: c.SET_b_r(b, r, 0)),
+    ("RES b, (HL)",   (0xcb, "10{0}110"),                  15, "(HL){0} <- 0",       lambda c, b:    c.SET_ref_nn(b, c.GET_HL(), 0)),
+    ("RES b, (ii+d)", ("11{1}101", 0xcb, "d", "10{0}110"), 23, "({1}+d){0} <- 0",    lambda c, b, i: c.SET_ref_nn(b, c.GET_index_plus_d(i), 0))]
+
+
 

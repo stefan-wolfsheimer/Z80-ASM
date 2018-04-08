@@ -25,12 +25,14 @@ from z80.assertions import assert_nn
 from z80.assertions import assert_d
 from z80.assertions import assert_q
 from z80.assertions import assert_r
+from z80.assertions import assert_b
 from z80.assertions import assert_ii
 from z80.assertions import assert_ss
 from z80.assertions import assert_index
 from z80.assertions import assert_flag
 from z80.instructions import InstructionSet
 from z80.util import parity
+from z80.util import n2d
 
 
 class GeneralPurposeRegisters(object):
@@ -203,6 +205,14 @@ class CPU(object):
         """
         return self.mem[self.GET_ii_plus_d('PC', d)]
 
+    def GET_ref_HL(self):
+        """(HL)"""
+        return self.GET_ref_nn(self.GET_HL())
+
+    def GET_ref_index_plus_d(self, idx, pc_offset=2):
+        """(idx + (PC+pc_offset))"""
+        return self.GET_ref_nn(self.GET_index_plus_d(idx, pc_offset))
+
     # 16 bit getter #
     def GET_PC(self):
         return self.PC
@@ -247,6 +257,11 @@ class CPU(object):
         nn = self.GET_ii(ii)
         return (nn + d) % CPU.MEMSIZE
 
+    def GET_index_plus_d(self, idx, pc_offset=2):
+        """idx + (PC+pc_offset)"""
+        d = n2d(self.GET_ref_PC_plus_d(pc_offset))
+        return self.GET_ii_plus_d(idx, d)
+
     def GET_ref2_nn(self, nn):
         """(nn+1) << 8 + (nn)"""
         assert_nn(nn)
@@ -265,13 +280,29 @@ class CPU(object):
         setattr(self.main_register_set, q, alt_value)
         setattr(self.alt_register_set, q, main_value)
 
-    # flags
+    # bitwise / flags set / get
     def SET_FLAG(self, flag, state=1):
         assert_flag(flag)
         if state:
             self.main_register_set.SET_FLAG(flag)
         else:
             self.main_register_set.UNSET_FLAG(flag)
+
+    def SET_b_n(self, b, n, state=1):
+        assert_b(b)
+        assert_n(n)
+        if state:
+            return n | (1 << b)
+        else:
+            return n & (0xff ^ (1 << b))
+
+    def SET_b_r(self, b, r, state=1):
+        assert_r(r)
+        self.LD_r_n(r, self.SET_b_n(b, self.GET_r(r), state))
+
+    def SET_b_ref_nn(self, b, nn, state=1):
+        assert_nn(nn)
+        self.LD_ref_nn_n(nn, self.SET_b_n(b, self.GET_ref_nn(nn), state))
 
     def GET_FLAG(self, flag):
         assert_flag(flag)
@@ -287,6 +318,16 @@ class CPU(object):
             if self.GET_FLAG(f):
                 ret += f
         return ret
+
+    def BIT_b_n(self, b, n):
+        assert_b(b)
+        assert_n(n)
+        self.SET_FLAG('H')
+        self.SET_FLAG('N', 0)
+        if (1 << b) & n:
+            self.SET_FLAG('Z', 0)
+        else:
+            self.SET_FLAG('Z', 1)
 
     # 8 bit arithmetic
     def ADD_A_n(self, n, carry=0):

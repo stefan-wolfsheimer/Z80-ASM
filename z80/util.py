@@ -32,3 +32,12 @@ def parity(n):
             p += 1
         m = m << 1
     return p % 2 == 0
+
+
+def n2d(n):
+    """Returns signed integer from byte"""
+    assert_n(n)
+    if n & 0x80:
+        return n - 0x100
+    else:
+        return n

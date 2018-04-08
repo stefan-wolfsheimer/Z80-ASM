@@ -47,6 +47,17 @@ class TestCPU(unittest.TestCase):
         with self.assertRaises(ValueError):
             cpu.LD_r_n('A', 0x100)
 
+    # 8 bit getter
+    def test_GET_ref_index_plus_d(self):
+        cpu = CPU()
+        cpu.LD_IX_nn(0xfffd)
+        cpu.LD_ref_nn_n(0x0000, 0x10)
+        cpu.LD_ref_nn_n(0x0001, 0x00)
+        cpu.LD_ref_nn_n(0x0002, 0x00)
+        cpu.LD_ref_nn_n(0x0003, 0x03)
+        cpu.LD_PC_nn(0x0001)
+        self.assertEqual(cpu.GET_ref_index_plus_d('IX'), 0x10)
+
     # 16 bit getter
     def test_GET_ii(self):
         cpu = CPU()
@@ -181,6 +192,33 @@ class TestCPU(unittest.TestCase):
             self.assertEqual(self.flags2str(flags, 'P'), cpu.GET_FLAGS('P'))
         for f in flags:
             self.assertFalse(cpu.GET_FLAG(f))
+
+    def test_SET_b_r(self):
+        cpu = CPU()
+        cpu.SET_b_r(1, 'A')
+        self.assertEqual(2, cpu.GET_A())
+        cpu.SET_b_r(7, 'A')
+        self.assertEqual(0x82, cpu.GET_A())
+        cpu.SET_b_r(1, 'A', 0)
+        self.assertEqual(0x80, cpu.GET_A())
+
+    def test_SET_b_ref_nn(self):
+        cpu = CPU()
+        cpu.SET_b_ref_nn(1, 0x0010)
+        self.assertEqual(2, cpu.GET_ref_nn(0x0010))
+        cpu.SET_b_ref_nn(7, 0x0010)
+        self.assertEqual(0x82, cpu.GET_ref_nn(0x0010))
+        cpu.SET_b_ref_nn(1, 0x0010, 0)
+        self.assertEqual(0x80, cpu.GET_ref_nn(0x0010))
+
+    def test_BIT_b_n(self):
+        cpu = CPU()
+        cpu.BIT_b_n(0, 0b01001011)
+        self.assertEqual(0, cpu.GET_FLAG('Z'))
+        cpu.BIT_b_n(7, 0b01001011)
+        self.assertEqual(1, cpu.GET_FLAG('Z'))
+        cpu.BIT_b_n(3, 0b01001011)
+        self.assertEqual(0, cpu.GET_FLAG('Z'))
 
     # 8 bit arithmetic
     def test_ADD_A_n(self):

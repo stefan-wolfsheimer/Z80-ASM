@@ -49,6 +49,11 @@ def assert_r(r):
         raise ValueError("Invalid register %s (not in BCDEHLA)" % str(r))
 
 
+def assert_b(b):
+    if not isinstance(b, int) or b < 0 or b > 7:
+        raise ValueError("Bit %s not in range [0, 7)" % str(b))
+
+
 def assert_ii(ii):
     pairs = ('BC', 'DE', 'HL', 'AF', 'SP', 'PC', 'IX', 'IY', 'IR')
     if not isinstance(ii, str) or ii not in pairs:
