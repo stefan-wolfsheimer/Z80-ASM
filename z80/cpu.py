@@ -122,6 +122,14 @@ class CPU(object):
         assert_n(n)
         self.mem[nn] = n
 
+    def LD_ref_HL_n(self, n):
+        """ LD (HL), n"""
+        self.LD_ref_nn_n(self.GET_HL(), n)
+
+    def LD_ref_index_plus_d(self, idx, n, pc_offset=2):
+        """LD (idx + (PC+pc_offset)), n"""
+        self.LD_ref_nn_n(self.GET_index_plus_d(idx, pc_offset), n)
+
     # 16 bit load #
     def LD_PC_nn(self, nn):
         """ LD PC, nn"""
@@ -175,9 +183,26 @@ class CPU(object):
         self.LD_ref_nn_n(nn1, nn2 & 0xff)
         self.LD_ref_nn_n((nn1 + 1) % CPU.MEMSIZE, nn2 >> 8)
 
+    def PUSH_qq(self, qq):
+        self.DEC_SP(2)
+        self.LD_ref_nn_nn(self.GET_SP(), self.GET_ii(qq))
+
+    def PUSH_ii(self, ii):
+        self.DEC_SP(2)
+        self.LD_ref_nn_nn(self.GET_SP(), self.GET_ii(ii))
+
+    def POP_qq(self, qq):
+        self.LD_ii_nn(qq, self.GET_ref_nn(self.GET_SP()))
+        self.INC_SP(2)
+
+    def POP_ii(self, ii):
+        self.LD_ii_nn(ii, self.GET_ref_nn(self.GET_SP()))
+        self.INC_SP(2)
+
     # 8 bit getter #
     def GET_r(self, r):
         """B,C,D,E,H,L or A"""
+        # todo replace by GET_s
         assert_r(r)
         return getattr(self.main_register_set, r)
 
