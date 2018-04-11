@@ -305,6 +305,91 @@ class CPU(object):
         setattr(self.main_register_set, q, alt_value)
         setattr(self.alt_register_set, q, main_value)
 
+    def EX_DE_HL(self):
+        tmp = self.GET_DE()
+        self.LD_ii_nn('DE', self.GET_HL())
+        self.LD_ii_nn('HL', tmp)
+
+    def EX_AF_altAF(self):
+        self.EX_q_altq('A')
+        self.EX_q_altq('F')
+
+    def EXX(self):
+        self.EX_q_altq('B')
+        self.EX_q_altq('C')
+        self.EX_q_altq('D')
+        self.EX_q_altq('E')
+        self.EX_q_altq('H')
+        self.EX_q_altq('L')
+
+    def EX_ref_SP_HL(self):
+        tmp = self.GET_ref2_nn(self.SP())
+        self.LD_ref2_nn_nn(self.SP(), self.GET_HL())
+        self.LD_ii('HL', tmp)
+
+    def EX_ref_SP_ii(self, ii):
+        tmp = self.GET_ref2_nn(self.SP())
+        self.LD_ref2_nn_nn(self.SP(), self.GET_ii(ii))
+        self.LD_ii(ii, tmp)
+
+    # block transfer group
+    def LDI(self):
+        self.LD_ref_nn_n(self.GET_DE(), self.GET_ref_nn(self.GET_HL()))
+        self.INC_ii('DE')
+        self.INC_ii('HL')
+        self.DEC_ii('BC')
+        self.UNSET_FLAG('H')
+        self.UNSET_FLAG('N')
+        if self.GET_BC() == 1:
+            self.SET_FLAG('V')
+        else:
+            self.UNSET_FLAG('V')
+
+    def LDIR(self):
+        self.LDI()
+        if self.GET_BC() != 0x0000:
+            self.DEC_PC(2)
+
+    def LDD(self):
+        self.LD_ref_nn_n(self.GET_DE(), self.GET_ref_nn(self.GET_HL()))
+        self.DEC_ii('DE')
+        self.DEC_ii('HL')
+        self.DEC_ii('BC')
+        self.UNSET_FLAG('H')
+        self.UNSET_FLAG('N')
+        if self.GET_BC() == 1:
+            self.SET_FLAG('V')
+        else:
+            self.UNSET_FLAG('V')
+
+    def LDDR(self):
+        self.LDD()
+        if self.GET_BC() != 0x0000:
+            self.DEC_PC(2)
+
+    # search
+    def CPI(self):
+        self.CP_A_n(self.GET_ref_nn(self.GET_HL()), False)
+        self.SET_FLAG('V', self.GET_BC() != 0x00001)
+        self.INC_ii('HL')
+        self.DEC_ii('BC')
+
+    def CPIR(self):
+        self.CPI()
+        if self.GET_BC() != 0x0000:
+            self.DEC_PC(2)    
+
+    def CPD(self):
+        self.CP_A_n(self.GET_ref_nn(self.GET_HL()), False)
+        self.SET_FLAG('V', self.GET_BC() != 0x00001)
+        self.DEC_ii('HL')
+        self.DEC_ii('BC')
+
+    def CPDR(self):
+        self.CPD()
+        if self.GET_BC() != 0x0000:
+            self.DEC_PC(2)    
+
     # bitwise / flags set / get
     def SET_FLAG(self, flag, state=1):
         assert_flag(flag)
@@ -354,6 +439,106 @@ class CPU(object):
         else:
             self.SET_FLAG('Z', 1)
 
+    # rotate and shift group
+    def RLC_r(self, r):
+        self.LD_r_n(r, self.shift_left_n(self.GET_r(r), 'RLC'))
+
+    def RLC_ref_HL(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'RLC'))
+
+    def RLC_ref_index_plus_d(self, ii):
+        d = n2d(self.GET_ref_PC_plus_d(2))
+        nn = self.GET_ii_plus_d(ii, d)
+        self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'RLC'))
+
+    ## RL ##
+    def RL_r(self, r):
+        self.LD_r_n(r, self.shift_left_n(self.GET_r(r), 'RL'))
+
+    def RL_ref_HL(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'RL'))
+
+    def RL_ref_index_plus_d(self, ii):
+        d = n2d(self.GET_ref_PC_plus_d(2))
+        nn = self.GET_ii_plus_d(ii, d)
+        self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'RL'))
+
+    ## SLA ##
+    def SLA_r(self, r):
+        self.LD_r_n(r, self.shift_left_n(self.GET_r(r), 'SLA'))
+
+    def SLA_ref_HL(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'SLA'))
+
+    def SLA_ref_index_plus_d(self, ii):
+        d = n2d(self.GET_ref_PC_plus_d(2))
+        nn = self.GET_ii_plus_d(ii, d)
+        self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'SLA'))
+
+    ## RRC ##
+    def RRC_r(self, r):
+        self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'RRC'))
+
+    def RRC_ref_HL(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'RRC'))
+
+    def RRC_ref_index_plus_d(self, ii):
+        d = n2d(self.GET_ref_PC_plus_d(2))
+        nn = self.GET_ii_plus_d(ii, d)
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'RRC'))
+
+    ## RR ##
+    def RR_r(self, r):
+        self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'RR'))
+
+    def RR_ref_HL(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'RR'))
+
+    def RR_ref_index_plus_d(self, ii):
+        d = n2d(self.GET_ref_PC_plus_d(2))
+        nn = self.GET_ii_plus_d(ii, d)
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'RR'))
+
+    ## SRA ##
+    def SRA_r(self, r):
+        self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'SRA'))
+
+    def SRA_ref_HL(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'SRA'))
+
+    def SRA_ref_index_plus_d(self, ii):
+        d = n2d(self.GET_ref_PC_plus_d(2))
+        nn = self.GET_ii_plus_d(ii, d)
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'SRA'))
+
+    ## SRL ##
+    def SRL_r(self, r):
+        self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'SRL'))
+
+    def SRL_ref_HL(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'SRL'))
+
+    def SRL_ref_index_plus_d(self, ii):
+        d = n2d(self.GET_ref_PC_plus_d(2))
+        nn = self.GET_ii_plus_d(ii, d)
+        self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'SRL'))
+
+    ## RLD RRD ##
+    def RLD(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.RLD_n(self.GET_ref_nn(nn)))
+
+    def RRD(self):
+        nn = self.GET_HL()
+        self.LD_ref_nn_n(nn, self.RRD_n(self.GET_ref_nn(nn)))
+    
     # 8 bit arithmetic
     def ADD_A_n(self, n, carry=0):
         assert_n(n)
