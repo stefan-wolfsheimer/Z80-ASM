@@ -20,19 +20,43 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from z80.assertions import assert_n
-from z80.assertions import assert_nn
-from z80.assertions import assert_d
-from z80.assertions import assert_q
-from z80.assertions import assert_r
-from z80.assertions import assert_b
-from z80.assertions import assert_ii
-from z80.assertions import assert_ss
-from z80.assertions import assert_index
-from z80.assertions import assert_flag
-from z80.instructions import InstructionSet
-from z80.util import parity
-from z80.util import n2d
+from assertions import assert_n
+from assertions import assert_nn
+from assertions import assert_d
+from assertions import assert_q
+from assertions import assert_r
+from assertions import assert_b
+from assertions import assert_ii
+from assertions import assert_ss
+from assertions import assert_index
+from assertions import assert_flag
+# from instructions import InstructionSet
+
+from util import parity
+from util import n2d
+from instruction_group import InstructionGroup
+from instruction_group import InstructionDecor as I
+
+
+ALL_INSTRUCTIONS = InstructionGroup("all instructions")
+EIGHT_BIT_LOAD_GROUP = InstructionGroup("8 bit load group",
+                                        ALL_INSTRUCTIONS)
+SIXTEEN_BIT_LOAD_GROUP = InstructionGroup("16 bit load group",
+                                          ALL_INSTRUCTIONS)
+EXCHANGE_GROUP = InstructionGroup("exchange group",
+                                  ALL_INSTRUCTIONS)
+BLOCK_TRANSFER_GROUP = InstructionGroup("block transfer group",
+                                        ALL_INSTRUCTIONS)
+SEARCH_GROUP = InstructionGroup("search group",
+                                ALL_INSTRUCTIONS)
+EIGHT_BIT_ARITHMETIC_GROUP = InstructionGroup("8 bit arithmetic group",
+                                              ALL_INSTRUCTIONS)
+GENERAL_PURPOSE = InstructionGroup("general purpose group",
+                                   ALL_INSTRUCTIONS)
+SIXTEEN_BIT_ARITHMETIC_GROUP = InstructionGroup("16 bit arithmetic group",
+                                                ALL_INSTRUCTIONS)
+ROTATE_AND_SHIFT_GROUP = InstructionGroup("rotate and shift group",
+                                          ALL_INSTRUCTIONS)
 
 
 class GeneralPurposeRegisters(object):
@@ -82,12 +106,16 @@ class CPU(object):
         self.PC = 0x0000
         self.SP = 0x0000
         self.mem = bytearray(CPU.MEMSIZE)
-        self.instr_set = InstructionSet()
 
     def instr_cycle(self):
         instr = self.instr_set.fetch(self)
         instr.step(self)
         self.INC_PC(instr.size)
+
+    @I(EIGHT_BIT_LOAD_GROUP, "01{0}{1}", expand=['r', 'r'])
+    def LD_r_r(self, r1, r2):
+        """ {0} <- {1} """
+        self.LD_r_n(r1, self.GET_r(r2))
 
     # 8 bit load #
     def LD_r_n(self, r_dest, n):
@@ -377,7 +405,7 @@ class CPU(object):
     def CPIR(self):
         self.CPI()
         if self.GET_BC() != 0x0000:
-            self.DEC_PC(2)    
+            self.DEC_PC(2)
 
     def CPD(self):
         self.CP_A_n(self.GET_ref_nn(self.GET_HL()), False)
@@ -388,7 +416,7 @@ class CPU(object):
     def CPDR(self):
         self.CPD()
         if self.GET_BC() != 0x0000:
-            self.DEC_PC(2)    
+            self.DEC_PC(2)
 
     # bitwise / flags set / get
     def SET_FLAG(self, flag, state=1):
@@ -452,7 +480,7 @@ class CPU(object):
         nn = self.GET_ii_plus_d(ii, d)
         self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'RLC'))
 
-    ## RL ##
+    # RL #
     def RL_r(self, r):
         self.LD_r_n(r, self.shift_left_n(self.GET_r(r), 'RL'))
 
@@ -465,7 +493,7 @@ class CPU(object):
         nn = self.GET_ii_plus_d(ii, d)
         self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'RL'))
 
-    ## SLA ##
+    # SLA #
     def SLA_r(self, r):
         self.LD_r_n(r, self.shift_left_n(self.GET_r(r), 'SLA'))
 
@@ -478,7 +506,7 @@ class CPU(object):
         nn = self.GET_ii_plus_d(ii, d)
         self.LD_ref_nn_n(nn, self.shift_left_n(self.GET_ref_nn(nn), 'SLA'))
 
-    ## RRC ##
+    # RRC #
     def RRC_r(self, r):
         self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'RRC'))
 
@@ -491,7 +519,7 @@ class CPU(object):
         nn = self.GET_ii_plus_d(ii, d)
         self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'RRC'))
 
-    ## RR ##
+    # RR #
     def RR_r(self, r):
         self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'RR'))
 
@@ -504,7 +532,7 @@ class CPU(object):
         nn = self.GET_ii_plus_d(ii, d)
         self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'RR'))
 
-    ## SRA ##
+    # SRA #
     def SRA_r(self, r):
         self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'SRA'))
 
@@ -517,7 +545,7 @@ class CPU(object):
         nn = self.GET_ii_plus_d(ii, d)
         self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'SRA'))
 
-    ## SRL ##
+    # SRL #
     def SRL_r(self, r):
         self.LD_r_n(r, self.shift_right_n(self.GET_r(r), 'SRL'))
 
@@ -530,7 +558,7 @@ class CPU(object):
         nn = self.GET_ii_plus_d(ii, d)
         self.LD_ref_nn_n(nn, self.shift_right_n(self.GET_ref_nn(nn), 'SRL'))
 
-    ## RLD RRD ##
+    # RLD RRD #
     def RLD(self):
         nn = self.GET_HL()
         self.LD_ref_nn_n(nn, self.RLD_n(self.GET_ref_nn(nn)))
@@ -538,7 +566,7 @@ class CPU(object):
     def RRD(self):
         nn = self.GET_HL()
         self.LD_ref_nn_n(nn, self.RRD_n(self.GET_ref_nn(nn)))
-    
+
     # 8 bit arithmetic
     def ADD_A_n(self, n, carry=0):
         assert_n(n)
