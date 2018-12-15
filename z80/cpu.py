@@ -175,7 +175,7 @@ class CPU(object):
     @I(EIGHT_BIT_LOAD_GROUP, [0x36, "n"])
     def LD__HL__n(self, n):
         """ (HL) <- n """
-        assert_r(n)
+        assert_n(n)
         self[HL()] = n
 
     @I(EIGHT_BIT_LOAD_GROUP, ["11{0}101", "01110{1}", "d"], expand=['ii', 'r'])

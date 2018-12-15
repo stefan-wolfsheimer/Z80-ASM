@@ -43,7 +43,10 @@ class RegisterPlusOffset2(object):
 
     def __str__(self):
         if self.memonic is None:
-            return "({0} + {1})".format(self.reg, self.d)
+            if self.d < 0:
+                return "({0} - {1})".format(self.reg, self.d)
+            else:
+                return "({0} + {1})".format(self.reg, self.d)
         else:
             return self.memonic
 
@@ -135,6 +138,9 @@ class RegisterSet(object):
             else:
                 self.main_register_set['F'] &= (0xff ^
                                                 RegisterSet.FLAG_MASK[key])
+        elif isinstance(key, RegisterPlusOffset):
+            assert_n(value)
+            self.mem[key.offset(self[key.reg])] = value
         elif isinstance(key, int):
             assert_nn(key)
             assert_n(value)

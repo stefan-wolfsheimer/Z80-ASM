@@ -99,6 +99,80 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu['D'], 0xff)
         self.assertEqual(cpu['E'], 0x10)
 
+    def test_LD__HL__r(self):
+        cpu = CPU()
+        cpu['HL'] = 0xa1b2
+        cpu['A'] = 0x42
+        cpu.LD__HL__r('A')
+        self.assertEqual(cpu[0xa1b2], 0x42)
+
+    def test_LD__HL__n(self):
+        cpu = CPU()
+        cpu['HL'] = 0xa1b2
+        cpu.LD__HL__n(0x42)
+        self.assertEqual(cpu[0xa1b2], 0x42)
+
+    def test_LD__ii_d__r(self):
+        cpu = CPU()
+        cpu['IX'] = 0x1012
+        cpu['A'] = 0xff
+        cpu.LD__ii_d__r('IX', 'A', -1)
+        self.assertEqual(cpu[0x1011], 0xff)
+
+    def test_LD__ii_d__n(self):
+        cpu = CPU()
+        cpu['IY'] = 0x1012
+        cpu.LD__ii_d__n('IY', -1, 0xff)
+        self.assertEqual(cpu[0x1011], 0xff)
+
+    def test_LD_A__BCDE_(self):
+        cpu = CPU()
+        start = 0x1010
+        for rr, func in {'BC': cpu.LD_A__BC_,
+                         'DE': cpu.LD_A__DE_}.items():
+            cpu[rr] = start
+            cpu[start] = 0xff
+            func()
+            self.assertEqual(cpu['A'], 0xff)
+            start += 2
+
+    def test_LD_A__nn_(self):
+        cpu = CPU()
+        nn = 0x1010
+        cpu[nn] = 0xff
+        cpu.LD_A__nn_(nn)
+        self.assertEqual(cpu['A'], 0xff)
+
+    def test_LD__BCDE__A(self):
+        cpu = CPU()
+        start = 0x1010
+        for rr, func in {'BC': cpu.LD__BC__A,
+                         'DE': cpu.LD__DE__A}.items():
+            cpu[rr] = start
+            cpu['A'] = 0xff
+            func()
+            self.assertEqual(cpu[start], 0xff)
+            start += 2
+
+    def test_LD__nn__A(self):
+        cpu = CPU()
+        nn = 0x1010
+        cpu['A'] = 0xff
+        cpu.LD__nn__A(nn)
+        self.assertEqual(cpu[nn], 0xff)
+
+    def test_LD_AIR_AIR(self):
+        cpu = CPU()
+        value = 0x10
+        for regs, func in {('A', 'I'): cpu.LD_A_I,
+                           ('A', 'R'): cpu.LD_A_R,
+                           ('I', 'A'): cpu.LD_I_A,
+                           ('R', 'A'): cpu.LD_R_A}.items():
+            cpu[regs[1]] = value
+            func()
+            self.assertEqual(cpu[regs[0]], value)
+            value += 1
+
     # ######################################################3
     # 8 bit getter
     @pytest.mark.skip()
