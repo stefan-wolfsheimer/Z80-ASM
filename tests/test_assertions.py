@@ -27,6 +27,7 @@ from z80.assertions import assert_q
 from z80.assertions import assert_r
 from z80.assertions import assert_b
 from z80.assertions import assert_ii
+from z80.assertions import assert_aa
 from z80.assertions import assert_qq
 from z80.assertions import assert_pp
 from z80.assertions import assert_ss
@@ -96,20 +97,20 @@ class TestAssertions(unittest.TestCase):
         with self.assertRaises(ValueError):
             assert_b('0')
 
-    def test_assert_ii(self):
+    def test_assert_aa(self):
         with self.assertRaises(ValueError):
-            assert_ii("CD")
+            assert_aa("CD")
         with self.assertRaises(ValueError):
-            assert_ii(1)
-        assert_ii('BC')
-        assert_ii('DE')
-        assert_ii('HL')
-        assert_ii('AF')
-        assert_ii('SP')
-        assert_ii('PC')
-        assert_ii('IX')
-        assert_ii('IY')
-        assert_ii('IR')
+            assert_aa(1)
+        assert_aa('BC')
+        assert_aa('DE')
+        assert_aa('HL')
+        assert_aa('AF')
+        assert_aa('SP')
+        assert_aa('PC')
+        assert_aa('IX')
+        assert_aa('IY')
+        assert_aa('IR')
 
     def test_assert_qq(self):
         assert_qq('BC')
@@ -134,6 +135,10 @@ class TestAssertions(unittest.TestCase):
         assert_rr('DE')
         assert_rr('IY')
         assert_rr('SP')
+
+    def test_assert_ii(self):
+        assert_ii('IX')
+        assert_ii('IY')
 
     def test_assert_flag(self):
         assert_flag('S')

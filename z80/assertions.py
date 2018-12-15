@@ -54,7 +54,8 @@ def assert_b(b):
         raise ValueError("Bit %s not in range [0, 7)" % str(b))
 
 
-def assert_ii(ii):
+def assert_aa(ii):
+    """ is any 16 bit register """
     pairs = ('BC', 'DE', 'HL', 'AF', 'SP', 'PC', 'IX', 'IY', 'IR')
     if not isinstance(ii, str) or ii not in pairs:
         raise ValueError("Invalid register pair %s" % str(ii))
@@ -90,7 +91,8 @@ def assert_rr(rr):
         raise ValueError("Invalid register pair %s" % str(rr))
 
 
-def assert_index(index):
+def assert_ii(index):
+    """ is any index bit register """
     if not isinstance(index, str) or index not in ('IX', 'IY'):
         raise ValueError("Invalid index register %s" % str(index))
 

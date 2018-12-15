@@ -1,6 +1,17 @@
+import re
 from functools import wraps
 from instr_template_expansion import REGISTER_CODE
 from instruction import Instruction
+
+
+FUNCTION_ARGUMENT = '(_([a-zA-Z]{1,2}|_[a-zA-Z]{2}_|_ii_d_))?'
+FUNCTION_NAME_TO_ASSEMBLER_PATTERN = re.compile('^([a-zA-Z]+)' +
+                                                FUNCTION_ARGUMENT +
+                                                FUNCTION_ARGUMENT + '$')
+FUNCTION_NAME_INDIRECT_ADDR_PATTERN = [(re.compile('^_([a-zA-Z]{2})_$'),
+                                        r'(\1)'),
+                                       (re.compile('^_([a-zA-Z]{2})_(d)_$'),
+                                        r'(\1+d)')]
 
 
 def enum_register_codes(r_codes):
@@ -13,9 +24,24 @@ def enum_register_codes(r_codes):
 
 
 def function_name_to_assembler(func_name, expand):
-    a = func_name.split("_")
-    return [a[0]] + [arg.replace(*repl) if len(repl) else arg
-                     for arg, repl in zip(a[1:], expand)]
+    def transform_indirect_addr(arg):
+        for expr, repl in FUNCTION_NAME_INDIRECT_ADDR_PATTERN:
+            if expr.match(arg):
+                return expr.sub(repl, arg)
+        return arg
+
+    def transform_arg(arg):
+        if len(expand) and expand[0][0] in arg:
+            return transform_indirect_addr(arg.replace(*expand.pop(0)))
+        else:
+            return transform_indirect_addr(arg)
+
+    res = FUNCTION_NAME_TO_ASSEMBLER_PATTERN.match(func_name)
+    if res is not None:
+        return [res.group(1)] + [transform_arg(arg)
+                                 for arg in res.groups()[2::2]]
+    else:
+        raise ValueError('invalid function name {0}'.format(func_name))
 
 
 class InstructionDecor(object):
@@ -28,26 +54,36 @@ class InstructionDecor(object):
         self.assembler = assembler
 
     def __call__(self, func):
+        def encode_opcode(opt, codes):
+            if isinstance(opt, int):
+                return opt
+            elif re.match('^[0-9{}]+$', opt):
+                return int(opt.format(*codes), 2)
+            else:
+                return opt
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
         name = func.__name__
 
         for regs, codes in enum_register_codes(self.expand):
-            opcode = [c if isinstance(c, int) else int(c.format(*codes), 2)
-                      for c in self.opcode]
             if self.assembler is None:
                 assembler = function_name_to_assembler(name,
                                                        zip(self.expand,
                                                            regs))
             else:
                 assembler = self.instr
-            instr = Instruction(assembler, opcode, func,
+            args = list(regs)
+            instr = Instruction(assembler,
+                                [encode_opcode(c, codes) for c in self.opcode],
+                                func,
+                                args=args,
                                 tstates=self.tstates,
                                 operation="",
                                 group=self.group.name)
             self.group.add(instr)
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
 
         return wrapper
 
@@ -57,6 +93,12 @@ class InstructionGroup(object):
         self.name = name
         self.parent = parent
         self.instructions = {}
+
+    def __getitem__(self, key):
+        return self.instructions[key]
+
+    def __contains__(self, key):
+        return key in self.instructions
 
     def add(self, instr):
         def set_code(instructions, codes, instr):

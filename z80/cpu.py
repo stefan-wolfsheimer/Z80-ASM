@@ -27,15 +27,20 @@ from assertions import assert_q
 from assertions import assert_r
 from assertions import assert_b
 from assertions import assert_ii
+from assertions import assert_aa
 from assertions import assert_ss
-from assertions import assert_index
 from assertions import assert_flag
-# from instructions import InstructionSet
 
 from util import parity
 from util import n2d
 from instruction_group import InstructionGroup
 from instruction_group import InstructionDecor as I
+from register import RegisterSet
+from register import RegisterPlusOffset
+from register import PC
+from register import HL
+from register import BC
+from register import DE
 
 
 ALL_INSTRUCTIONS = InstructionGroup("all instructions")
@@ -59,80 +64,197 @@ ROTATE_AND_SHIFT_GROUP = InstructionGroup("rotate and shift group",
                                           ALL_INSTRUCTIONS)
 
 
-class GeneralPurposeRegisters(object):
-    FLAG_MASK = {'S': 0x80,
-                 'Z': 0x40,
-                 '5': 0x20,
-                 'H': 0x10,
-                 '3': 0x08,
-                 'P': 0x04,
-                 'V': 0x04,
-                 'N': 0x02,
-                 'C': 0x01}
+# todo remove this
+import instr_templates as it
+from instr_template_expansion import expand_template
+from instruction import Instruction
 
-    def __init__(self):
-        self.B = 0x00
-        self.C = 0x00
-        self.D = 0x00
-        self.E = 0x00
-        self.H = 0x00
-        self.L = 0x00
-        self.A = 0x00
-        self.F = 0x00
 
-    def SET_FLAG(self, flag):
-        assert_flag(flag)
-        self.F |= GeneralPurposeRegisters.FLAG_MASK[flag]
+def add_instruction_group(group, instr_set):
+    grp = group.name
+    for entry in instr_set:
+        for expanded in expand_template(entry):
+            instr = Instruction(assembler=expanded['instr'],
+                                opcode=list(expanded['opcode']),
+                                func=expanded['func'],
+                                tstates=expanded['tstates'],
+                                operation=expanded['operation'],
+                                group=grp)
+            group.add(instr)
 
-    def UNSET_FLAG(self, flag):
-        assert_flag(flag)
-        self.F &= 0xff ^ GeneralPurposeRegisters.FLAG_MASK[flag]
 
-    def GET_FLAG(self, flag):
-        assert_flag(flag)
-        return 1 if self.F & GeneralPurposeRegisters.FLAG_MASK[flag] else 0
+add_instruction_group(EIGHT_BIT_LOAD_GROUP,
+                      it.EIGHT_BIT_LOAD_GROUP)
+add_instruction_group(SIXTEEN_BIT_LOAD_GROUP,
+                      it.SIXTEEN_BIT_LOAD_GROUP)
+add_instruction_group(EXCHANGE_GROUP,
+                      it.EXCHANGE_GROUP)
+add_instruction_group(BLOCK_TRANSFER_GROUP,
+                      it.BLOCK_TRANSFER_GROUP)
+add_instruction_group(SEARCH_GROUP,
+                      it.SEARCH_GROUP)
+add_instruction_group(EIGHT_BIT_ARITHMETIC_GROUP,
+                      it.EIGHT_BIT_ARITHMETIC_GROUP)
+add_instruction_group(GENERAL_PURPOSE,
+                      it.GENERAL_PURPOSE)
+add_instruction_group(SIXTEEN_BIT_ARITHMETIC_GROUP,
+                      it.SIXTEEN_BIT_ARITHMETIC_GROUP)
+add_instruction_group(ROTATE_AND_SHIFT_GROUP,
+                      it.ROTATE_AND_SHIFT_GROUP)
+
+# end remove
 
 
 class CPU(object):
-    MEMSIZE = 0x10000
-
     def __init__(self):
-        self.main_register_set = GeneralPurposeRegisters()
-        self.alt_register_set = GeneralPurposeRegisters()
-        self.I = 0x00
-        self.R = 0x00
-        self.IX = 0x0000
-        self.IY = 0x0000
-        self.PC = 0x0000
-        self.SP = 0x0000
-        self.mem = bytearray(CPU.MEMSIZE)
+        self.reg = RegisterSet()
+
+    def __getitem__(self, key):
+        return self.reg[key]
+
+    def __setitem__(self, key, value):
+        self.reg[key] = value
+
+    def fetch(self):
+        # todo 4 byte instructions
+        code1 = self['PC']
+        if code1 in ALL_INSTRUCTIONS:
+            if isinstance(ALL_INSTRUCTIONS[code1], dict):
+                code2 = self[PC(1)]
+                if code2 in ALL_INSTRUCTIONS[code1]:
+                    return ALL_INSTRUCTIONS[code1][code2]
+                else:
+                    return None
+            else:
+                return ALL_INSTRUCTIONS[code1]
+        else:
+            raise NotImplemented('instruction not implemented %02x' % code1)
 
     def instr_cycle(self):
         instr = self.instr_set.fetch(self)
         instr.step(self)
         self.INC_PC(instr.size)
 
+    # ################ #
+    # 8 bit load group #
+    # ################ #
     @I(EIGHT_BIT_LOAD_GROUP, "01{0}{1}", expand=['r', 'r'])
     def LD_r_r(self, r1, r2):
         """ {0} <- {1} """
-        self.LD_r_n(r1, self.GET_r(r2))
+        assert_r(r1)
+        assert_r(r2)
+        self[r1] = self[r2]
 
-    # 8 bit load #
-    def LD_r_n(self, r_dest, n):
-        """ LD r, n"""
-        assert_r(r_dest)
+    @I(EIGHT_BIT_LOAD_GROUP, ["00{0}110", "n"], expand=['r'])
+    def LD_r_n(self, r, n):
+        """ {0} <- {1}"""
+        assert_r(r)
         assert_n(n)
-        setattr(self.main_register_set, r_dest, n)
+        self[r] = n
 
+    @I(EIGHT_BIT_LOAD_GROUP, "01{0}110", expand=['r'])
+    def LD_r__HL_(self, r):
+        """ {0} <- (HL) """
+        assert_r(r)
+        self[r] = self[HL()]
+
+    @I(EIGHT_BIT_LOAD_GROUP, ["11{1}101", "01{0}110", "d"], expand=['r', 'ii'])
+    def LD_r__ii_d_(self, r, ii, d):
+        """ {0} <- ({1} + d) """
+        assert_r(r)
+        assert_ii(ii)
+        assert_d(d)
+        self[r] = self[RegisterPlusOffset(ii, d)]
+
+    @I(EIGHT_BIT_LOAD_GROUP, "01110{0}", expand=['r'])
+    def LD__HL__r(self, r):
+        """ (HL) <- {0} """
+        assert_r(r)
+        self[HL()] = self[r]
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0x36, "n"])
+    def LD__HL__n(self, n):
+        """ (HL) <- n """
+        assert_r(n)
+        self[HL()] = n
+
+    @I(EIGHT_BIT_LOAD_GROUP, ["11{0}101", "01110{1}", "d"], expand=['ii', 'r'])
+    def LD__ii_d__r(self, ii, r, d):
+        assert_ii(ii)
+        assert_d(d)
+        assert_r(r)
+        self[RegisterPlusOffset(ii, d)] = self[r]
+
+    @I(EIGHT_BIT_LOAD_GROUP, ["11{0}101", 0x36, "d", "n"], expand=['ii'])
+    def LD__ii_d__n(self, ii, d, n):
+        assert_ii(ii)
+        assert_n(n)
+        assert_d(d)
+        self[RegisterPlusOffset(ii, d)] = n
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0x0a])
+    def LD_A__BC_(self):
+        """ A <- (BC) """
+        self['A'] = self[BC()]
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0x1a])
+    def LD_A__DE_(self):
+        """ A <- (DE) """
+        self['A'] = self[DE()]
+
+    # todo: 16 bit values in opcode
+    @I(EIGHT_BIT_LOAD_GROUP, [0x3a, "nn"])
+    def LD_A__nn_(self, nn):
+        """ A <- (nn) """
+        assert_nn(nn)
+        self['A'] = self[nn]
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0x02])
+    def LD__BC__A(self):
+        """ (BC) <- A """
+        self[BC()] = self['A']
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0x12])
+    def LD__DE__A(self):
+        """ (DE) <- A """
+        self[DE()] = self['A']
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0x32, "nn"])
+    def LD__nn__A(self, nn):
+        """ (nn) <- A """
+        assert_nn(nn)
+        self[nn] = self['A']
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x57])
+    def LD_A_I(self):
+        """ A <- I """
+        self['A'] = self['I']
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x5f])
+    def LD_A_R(self):
+        """ A <- R """
+        self['A'] = self['R']
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x47])
+    def LD_I_A(self):
+        """ I <- A """
+        self['I'] = self['A']
+
+    @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x4f])
+    def LD_R_A(self):
+        """ R <- A """
+        self['R'] = self['A']
+
+    # ########################################
     def LD_A_n(self, n):
         """ LD A,n """
         assert_n(n)
-        self.main_register_set.A = n
+        self.reg['A'] = n
 
     def LD_F_n(self, n):
         """ LD F, n"""
         assert_n(n)
-        self.main_register_set.F = n
+        self.reg['F'] = n
 
     def LD_I_n(self, n):
         """ LD I, n"""
@@ -200,7 +322,7 @@ class CPU(object):
 
     def LD_index_nn(self, index, nn):
         """ LD IX, nn or LD IY, nn"""
-        assert_index(index)
+        assert_ii(index)
         assert_nn(nn)
         setattr(self, index, nn)
 
@@ -232,19 +354,19 @@ class CPU(object):
         """B,C,D,E,H,L or A"""
         # todo replace by GET_s
         assert_r(r)
-        return getattr(self.main_register_set, r)
+        return self.reg[r]
 
     def GET_A(self):
-        return self.main_register_set.A
+        return self.reg['A']
 
     def GET_F(self):
-        return self.main_register_set.F
+        return self.reg['F']
 
     def GET_I(self):
-        return self.I
+        return self.reg['I']
 
     def GET_R(self):
-        return self.R
+        return self.reg['R']
 
     def GET_ref_nn(self, nn):
         """(nn)"""
@@ -274,16 +396,16 @@ class CPU(object):
         return self.SP
 
     def GET_BC(self):
-        return (self.main_register_set.B << 8) + self.main_register_set.C
+        return self.reg['BC']
 
     def GET_DE(self):
-        return (self.main_register_set.D << 8) + self.main_register_set.E
+        return self.reg['DE']
 
     def GET_HL(self):
-        return (self.main_register_set.H << 8) + self.main_register_set.L
+        return self.reg['HL']
 
     def GET_AF(self):
-        return (self.main_register_set.A << 8) + self.main_register_set.F
+        return self.reg['AF']
 
     def GET_IX(self):
         return self.IX
@@ -300,7 +422,7 @@ class CPU(object):
         return getter()
 
     def GET_ii(self, ii):
-        assert_ii(ii)
+        assert_aa(ii)
         getter = getattr(self, 'GET_' + ii)
         return getter()
 
@@ -422,9 +544,9 @@ class CPU(object):
     def SET_FLAG(self, flag, state=1):
         assert_flag(flag)
         if state:
-            self.main_register_set.SET_FLAG(flag)
+            self.reg[flag] = 1
         else:
-            self.main_register_set.UNSET_FLAG(flag)
+            self.reg[flag] = 0
 
     def SET_b_n(self, b, n, state=1):
         assert_b(b)
@@ -444,7 +566,7 @@ class CPU(object):
 
     def GET_FLAG(self, flag):
         assert_flag(flag)
-        return self.main_register_set.GET_FLAG(flag)
+        return self.reg[flag]
 
     def GET_FLAGS(self, V_or_P='V'):
         if V_or_P == 'V':
@@ -469,7 +591,7 @@ class CPU(object):
 
     # rotate and shift group
     def RLC_r(self, r):
-        self.LD_r_n(r, self.shift_left_n(self.GET_r(r), 'RLC'))
+        self.LD_r_n(r, self.shift_left_n(self.reg[r], 'RLC'))
 
     def RLC_ref_HL(self):
         nn = self.GET_HL()
@@ -691,20 +813,20 @@ class CPU(object):
 
     def INC_ii(self, ii, n=1):
         """ ii <- ii + n"""
-        assert_ii(ii)
+        assert_aa(ii)
         value = self.GET_ii(ii)
         value = (value + n) % CPU.MEMSIZE
         self.LD_ii_nn(ii, value)
 
     def DEC_ii(self, ii, n=1):
         """ ii <- ii - n"""
-        assert_ii(ii)
+        assert_aa(ii)
         value = self.GET_ii(ii)
         value = (value - n) % CPU.MEMSIZE
         self.LD_ii_nn(ii, value)
 
     def ADD_ii_nn(self, ii, nn, carry=0):
-        assert_ii(ii)
+        assert_aa(ii)
         assert_nn(nn)
         mm = self.GET_ii(ii)
         res = mm + nn + carry

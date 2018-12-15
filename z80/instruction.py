@@ -1,9 +1,23 @@
+from register import RegisterPlusOffset
+from register import RegisterPlusOffset2
+
+
 class Instruction(object):
-    def __init__(self, assembler, opcode, func,
+    def __init__(self, assembler, opcode, func, args=[],
                  tstates=1, operation="", group=""):
+        def opcode2offset(i, c):
+            if isinstance(c, str) and len(c) == 1:
+                return RegisterPlusOffset('PC', i, memonic=c)
+            elif isinstance(c, str) and len(c) == 2:
+                return RegisterPlusOffset2('PC', i, memonic=c)
+            else:
+                return c
+
         self.instr = assembler
-        self.opcode = opcode
-        self.size = len(opcode)
+        self.opcode = [opcode2offset(i, c)
+                       for i, c in enumerate(opcode)]
+        self.size = sum([1 if isinstance(c, int) else c.len()
+                         for c in self.opcode])
         self.func = func
         self.tstates = tstates
         self.operation = operation

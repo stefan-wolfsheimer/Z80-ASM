@@ -5,26 +5,27 @@
 #
 ################################################################################
 EIGHT_BIT_LOAD_GROUP = [
-    ("LD r, r",        ("01{0}{1}"),                  1, "{0} <- {1}",      lambda c, r, rs: c.LD_r_n(r, c.GET_r(rs))),
-    ("LD r, n",        ("00{0}110", "n"),             1, "{0} <- n",        lambda c, r:     c.LD_r_n(r, c.GET_ref_PC_plus_d(1))),
-    ("LD r, (HL)",     ("01{0}110"),                  1, "{0} <- (HL)",     lambda c, r:     c.LD_r_n(r, c.GET_ref_HL())),
-    ("LD r, (ii + d)", ("11{1}101", "01{0}110", "d"), 1, "{0} <- ({1}+d)",  lambda c, r, i:  c.LD_r_n(r, c.GET_ref_index_plus_d(i))),
-    ("LD (HL), r",     ("01110{0}"),                  1, "(HL) <- {0}",     lambda c, r:     c.LD_ref_HL_n(c.GET_r(r))),
-    ("LD (HL), n",     (0x36, "n"),                   1, "(HL) <- n",       lambda c:        c.LD_ref_HL_n(c.GET_ref_PC_plus_d(1))),
-    ("LD (ii + d), r", ("11{0}101", "01110{1}", "d"), 1, "({0}+d) <- {1}",  lambda c, i, r:  c.LD_ref_index_plus_d(i, c.GET_r(r))),
-    ("LD (ii + d), n", ("11{0}101", 0x36, "d", "n"),  1, "({0}+d) <- n",    lambda c, i:     c.LD_ref_index_plus_d(i, c.GET_ref_PC_plus_d(3))),
-    ("LD A, (BC)",     (0x0a),                        1, "A <- (BC)",       lambda c:        c.LD_A_n(c.GET_ref_nn(c.GET_BC()))),
-    ("LD A, (DE)",     (0x1a),                        1, "A <- (DE)",       lambda c:        c.LD_A_n(c.GET_ref_nn(c.GET_DE()))),
-    ("LD A, (nn)",     (0x3a, "nl", "nh"),            1, "A <- (nn)",       lambda c:        c.LD_A_n(c.GET_ref_nn((c.GET_PC_plus_d(2) << 8) +
-                                                                                                                   c.GET_PC_plus_d(1)))),
-    ("LD (BC), A",     (0x02),                        1, "(BC) <- A",       lambda c:        c.LD_ref_nn_n(c.GET_BC(), c.GET_A())),
-    ("LD (DE), A",     (0x12),                        1, "(DE) <- A",       lambda c:        c.LD_ref_nn_n(c.GET_DE(), c.GET_A())),
-    ("LD (nn), A",     (0x32, "nl", "nh"),            1, "(nn) <- A",       lambda c:        c.LD_ref_nn_n((c.GET_PC_plus_d(2) << 8) +
-                                                                                                           c.GET_PC_plus_d(1), c.GET_A())),
-    ("LD A, I",        (0xed, 0x57),                  1, "A <- I",          lambda c:        c.LD_A_n(c.GET_I())),
-    ("LD A, R",        (0xed, 0x5f),                  1, "A <- R",          lambda c:        c.LD_A_n(c.GET_R())),
-    ("LD I, A",        (0xed, 0x47),                  1, "I <- A",          lambda c:        c.LD_I_n(c.GET_A())),
-    ("LD R, A",        (0xed, 0x4f),                  1, "R <- A",          lambda c:        c.LD_R_n(c.GET_A()))]
+    # ("LD r, r",        ("01{0}{1}"),                  1, "{0} <- {1}",      lambda c, r, rs: c.LD_r_n(r, c.GET_r(rs))),
+    # ("LD r, n",        ("00{0}110", "n"),             1, "{0} <- n",        lambda c, r:     c.LD_r_n(r, c.GET_ref_PC_plus_d(1))),
+    # ("LD r, (HL)",     ("01{0}110"),                  1, "{0} <- (HL)",     lambda c, r:     c.LD_r_n(r, c.GET_ref_HL())),
+    # ("LD r, (ii + d)", ("11{1}101", "01{0}110", "d"), 1, "{0} <- ({1}+d)",  lambda c, r, i:  c.LD_r_n(r, c.GET_ref_index_plus_d(i))),
+    # ("LD (HL), r",     ("01110{0}"),                  1, "(HL) <- {0}",     lambda c, r:     c.LD_ref_HL_n(c.GET_r(r))),
+    # ("LD (HL), n",     (0x36, "n"),                   1, "(HL) <- n",       lambda c:        c.LD_ref_HL_n(c.GET_ref_PC_plus_d(1))),
+    # ("LD (ii + d), r", ("11{0}101", "01110{1}", "d"), 1, "({0}+d) <- {1}",  lambda c, i, r:  c.LD_ref_index_plus_d(i, c.GET_r(r))),
+    # ("LD (ii + d), n", ("11{0}101", 0x36, "d", "n"),  1, "({0}+d) <- n",    lambda c, i:     c.LD_ref_index_plus_d(i, c.GET_ref_PC_plus_d(3))),
+    # ("LD A, (BC)",     (0x0a),                        1, "A <- (BC)",       lambda c:        c.LD_A_n(c.GET_ref_nn(c.GET_BC()))),
+    # ("LD A, (DE)",     (0x1a),                        1, "A <- (DE)",       lambda c:        c.LD_A_n(c.GET_ref_nn(c.GET_DE()))),
+    # ("LD A, (nn)",     (0x3a, "nl", "nh"),            1, "A <- (nn)",       lambda c:        c.LD_A_n(c.GET_ref_nn((c.GET_PC_plus_d(2) << 8) +
+    #                                                                                                               c.GET_PC_plus_d(1)))),
+    # ("LD (BC), A",     (0x02),                        1, "(BC) <- A",       lambda c:        c.LD_ref_nn_n(c.GET_BC(), c.GET_A())),
+    # ("LD (DE), A",     (0x12),                        1, "(DE) <- A",       lambda c:        c.LD_ref_nn_n(c.GET_DE(), c.GET_A())),
+    # ("LD (nn), A",     (0x32, "nl", "nh"),            1, "(nn) <- A",       lambda c:        c.LD_ref_nn_n((c.GET_PC_plus_d(2) << 8) +
+    #                                                                                                       c.GET_PC_plus_d(1), c.GET_A())),
+    # ("LD A, I",        (0xed, 0x57),                  1, "A <- I",          lambda c:        c.LD_A_n(c.GET_I())),
+    # ("LD A, R",        (0xed, 0x5f),                  1, "A <- R",          lambda c:        c.LD_A_n(c.GET_R())),
+    # ("LD I, A",        (0xed, 0x47),                  1, "I <- A",          lambda c:        c.LD_I_n(c.GET_A())),
+    # ("LD R, A",        (0xed, 0x4f),                  1, "R <- A",          lambda c:        c.LD_R_n(c.GET_A()))
+]
 
 ################################################################################
 #

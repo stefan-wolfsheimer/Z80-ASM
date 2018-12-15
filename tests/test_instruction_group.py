@@ -55,6 +55,16 @@ class TestInstructionSet(unittest.TestCase):
         self.assertEqual(function_name_to_assembler('LD_r_r',
                                                     [('r', 'A'), ('r', 'B')]),
                          ['LD', 'A', 'B'])
+        self.assertEqual(function_name_to_assembler('LD_r__HL_',
+                                                    [('r', 'A')]),
+                         ['LD', 'A', '(HL)'])
+        self.assertEqual(function_name_to_assembler('LD__HL__r',
+                                                    [('r', 'A')]),
+                         ['LD', '(HL)', 'A'])
+        self.assertEqual(function_name_to_assembler('LD__ii_d___ii_d_',
+                                                    [('ii', 'IX'),
+                                                     ('ii', 'IY')]),
+                         ['LD', '(IX+d)', '(IY+d)'])
 
 
 if __name__ == '__main__':
