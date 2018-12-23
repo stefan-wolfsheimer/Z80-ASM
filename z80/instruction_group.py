@@ -2,6 +2,7 @@ import re
 from functools import wraps
 from instr_template_expansion import REGISTER_CODE
 from instruction import Instruction
+from register import PC
 
 
 FUNCTION_ARGUMENT = '(_([a-zA-Z]{1,2}|_[a-zA-Z]{2}_|_ii_d_))?'
@@ -39,7 +40,8 @@ def function_name_to_assembler(func_name, expand):
     res = FUNCTION_NAME_TO_ASSEMBLER_PATTERN.match(func_name)
     if res is not None:
         return [res.group(1)] + [transform_arg(arg)
-                                 for arg in res.groups()[2::2]]
+                                 for arg in res.groups()[2::2]
+                                 if arg is not None]
     else:
         raise ValueError('invalid function name {0}'.format(func_name))
 
@@ -113,3 +115,23 @@ class InstructionGroup(object):
             self.parent.add(instr)
 
         set_code(self.instructions, instr.opcode, instr)
+
+    def fetch(self, cpu):
+        code1 = cpu[PC()]
+        if code1 in self:
+            if isinstance(self[code1], dict):
+                code2 = self[PC(1)]
+                if code2 in self[code1]:
+                    instr = self[code1][code2]
+                    import pprint
+                    pprint.pprint(vars(instr))
+                    return instr
+                else:
+                    return None
+            else:
+                instr = self[code1]
+                import pprint
+                pprint.pprint(vars(instr))
+                return self[code1]
+        else:
+            raise NotImplemented('instruction not implemented %02x' % code1)

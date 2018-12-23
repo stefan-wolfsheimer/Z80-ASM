@@ -33,27 +33,28 @@ EIGHT_BIT_LOAD_GROUP = [
 #
 ################################################################################
 SIXTEEN_BIT_LOAD_GROUP = [
-    ("LD dd, nn",      ("00{0}0001", "nl", "nh"),       1, "{0} <- nn",         lambda c, dd:  c.LD_dd_nn(dd, c.GET_ref2_PC_plus_d(1))),
-    ("LD ii, nn",      ("11{0}101", 0x21, "nl", "nh"),  1, "{0} <- nn",         lambda c, ii:  c.LD_index_nn(ii, c.GET_ref2_PC_plus_d(2))),
-    ("LD HL, (nn)",    (0x2a, "nl", "nh"),              1, "HL <- (nn)",        lambda c:      c.LD_dd_nn('HL', c.GET_ref2_PC_plus_d(1))),
-    ("LD dd, (nn)",    (0xed, "01{0}1011", "nl", "nh"), 1, "dd <- (nn)",        lambda c, dd:  c.LD_dd_nn(dd, c.GET_ref2_PC_plus_d(2))),
-    ("LD ii, (nn)",    ("11{0}101", 0x2a, "nl", "nh"),  1, "{0} <- (nn)",       lambda c, ii:  c.LD_ii_nn(ii, c.GET_ref2_PC_plus_d(2))),
-    ("LD (nn), HL",    (0x22, "nl", "nh"),              1, "(nn) <- HL,",       lambda c:      c.LD_ref_nn_nn(c.GET_ref2_PC_plus_d(1),
-                                                                                                              c.GET_HL())),
-    ("LD (nn), dd",    (0xed, "01{0}0011", "nl", "nh"), 1, "(nn) <- dd",        lambda c, dd: c.LD_ref_nn_nn(c.GET_ref2_PC_plus_d(2),
-                                                                                                             c.GET_ii(dd))),
-    ("LD (nn), ii",    ("11{0}101", 0x22, "nl", "nh"),  1, "nn <- {0}",         lambda c, ii: c.LD_ref_nn_nn(c.GET_ref2_PC_plus_d(2),
-                                                                                                             c.GET_ii(ii))),
-    ("LD SP, HL",      (0xf9),                          1, "SP <- HL",          lambda c:     c.LD_SP_nn(c.GET_HL())),
-    ("LD SP, ii",      ("11{0}101", 0xf9),              1, "SP <- {0}",         lambda c, ii: c.LD_SP_nn(c.GET_ii(ii))),
-    ("PUSH qq",        ("11{0}0101"),                   1, ("(SP-2) <- qq," +
-                                                            "SP <- SP-2"),      lambda c, qq: c.PUSH_qq(qq)),
-    ("PUSH ii",        ("11{0}101", 0xe5),              1, ("(SP-2) <- {0}, " +
-                                                            "SP <- SP-2"),      lambda c, ii: c.PUSH_ii(ii)),
-    ("POP qq",         ("11{0}0001"),                   1, ("qq <- (SP), " +
-                                                            "SP <- SP+2"),      lambda c, qq: c.POP_qq(qq)),
-    ("POP ii",         ("11{0}101", 0xe1),              1, ("{0} <- (SP)" +
-                                                            "SP <- SP+2"),      lambda c, ii: c.POP_ii(ii))]
+#    ("LD dd, nn",      ("00{0}0001", "nl", "nh"),       1, "{0} <- nn",         lambda c, dd:  c.LD_dd_nn(dd, c.GET_ref2_PC_plus_d(1))),
+#    ("LD ii, nn",      ("11{0}101", 0x21, "nl", "nh"),  1, "{0} <- nn",         lambda c, ii:  c.LD_index_nn(ii, c.GET_ref2_PC_plus_d(2))),
+#    ("LD HL, (nn)",    (0x2a, "nl", "nh"),              1, "HL <- (nn)",        lambda c:      c.LD_dd_nn('HL', c.GET_ref2_PC_plus_d(1))),
+#    ("LD dd, (nn)",    (0xed, "01{0}1011", "nl", "nh"), 1, "dd <- (nn)",        lambda c, dd:  c.LD_dd_nn(dd, c.GET_ref2_PC_plus_d(2))),
+#    ("LD ii, (nn)",    ("11{0}101", 0x2a, "nl", "nh"),  1, "{0} <- (nn)",       lambda c, ii:  c.LD_ii_nn(ii, c.GET_ref2_PC_plus_d(2))),
+#    ("LD (nn), HL",    (0x22, "nl", "nh"),              1, "(nn) <- HL,",       lambda c:      c.LD_ref_nn_nn(c.GET_ref2_PC_plus_d(1),
+#                                                                                                              c.GET_HL())),
+#    ("LD (nn), dd",    (0xed, "01{0}0011", "nl", "nh"), 1, "(nn) <- dd",        lambda c, dd: c.LD_ref_nn_nn(c.GET_ref2_PC_plus_d(2),
+#                                                                                                             c.GET_ii(dd))),
+#    ("LD (nn), ii",    ("11{0}101", 0x22, "nl", "nh"),  1, "nn <- {0}",         lambda c, ii: c.LD_ref_nn_nn(c.GET_ref2_PC_plus_d(2),
+#                                                                                                             c.GET_ii(ii))),
+#    ("LD SP, HL",      (0xf9),                          1, "SP <- HL",          lambda c:     c.LD_SP_nn(c.GET_HL())),
+#    ("LD SP, ii",      ("11{0}101", 0xf9),              1, "SP <- {0}",         lambda c, ii: c.LD_SP_nn(c.GET_ii(ii))),
+#    ("PUSH qq",        ("11{0}0101"),                   1, ("(SP-2) <- qq," +
+#                                                           "SP <- SP-2"),      lambda c, qq: c.PUSH_qq(qq)),
+#    ("PUSH ii",        ("11{0}101", 0xe5),              1, ("(SP-2) <- {0}, " +
+#                                                            "SP <- SP-2"),      lambda c, ii: c.PUSH_ii(ii)),
+#    ("POP qq",         ("11{0}0001"),                   1, ("qq <- (SP), " +
+#                                                            "SP <- SP+2"),      lambda c, qq: c.POP_qq(qq)),
+#    ("POP ii",         ("11{0}101", 0xe1),              1, ("{0} <- (SP)" +
+#                                                            "SP <- SP+2"),      lambda c, ii: c.POP_ii(ii))
+]
 
 ################################################################################
 #
@@ -197,10 +198,11 @@ SIXTEEN_BIT_ARITHMETIC_GROUP = [
     ("SBC HL, ss", (0xed, "01{0}0010"), 15, "HL <- HL - {0} - CY", SBC_HL_ss),
     ("ADD IX, pp", (0xdd, "00{0}1001"), 15, "IX <- IX + {0}",      ADD_IX_pp),
     ("ADD IY, rr", (0xfd, "00{0}1001"), 15, "IY <- IY + {0}",      ADD_IY_rr),
-    ("INC ss",     ("00{0}0011"),        6, "{0} <- {0} + 1",      INC_ss),
-    ("INC ii",     ("11{0}101", 0x23),  10, "{0} <- {0} + 1",      INC_ii),
-    ("DEC ss",     ("00{0}1011"),        6, "{0} <- {0} - 1",      DEC_ss),
-    ("DEC ii",     ("11{0}101", 0x2b),  10, "{0} <- {0} - 1",      DEC_ii)]
+#    ("INC ss",     ("00{0}0011"),        6, "{0} <- {0} + 1",      INC_ss),
+#    ("INC ii",     ("11{0}101", 0x23),  10, "{0} <- {0} + 1",      INC_ii),
+#    ("DEC ss",     ("00{0}1011"),        6, "{0} <- {0} - 1",      DEC_ss),
+#    ("DEC ii",     ("11{0}101", 0x2b),  10, "{0} <- {0} - 1",      DEC_ii)
+]
 
 ################################################################################
 #

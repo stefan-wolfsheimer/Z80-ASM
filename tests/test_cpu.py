@@ -50,6 +50,19 @@ class TestCPU(unittest.TestCase):
         self.assertIsNone(instr)
 
     # 8 bit load #
+    def test_LD_r_r(self):
+        cpu = CPU()
+        counter = 0x00
+        for r1 in "BCDEHLA":
+            for r2 in "BCDEHLA":
+                counter += 1
+                cpu[r2] = counter
+                cpu.LD_r_r(r1, r2)
+                self.assertEqual(cpu[r1], counter)
+        cpu['PC'] = 0x0100
+        cpu[0x0100] = 0x50  # LD D, B
+        # instr, args = cpu.fetch()
+
     def test_LD_r_n(self):
         cpu = CPU()
         cpu.LD_r_n('B', 0x01)
@@ -59,7 +72,6 @@ class TestCPU(unittest.TestCase):
         cpu.LD_r_n('H', 0x05)
         cpu.LD_r_n('L', 0x06)
         cpu.LD_r_n('A', 0x07)
-        self.assertEqual(cpu['A'], 0x07)
         self.assertEqual(cpu['B'], 0x01)
         self.assertEqual(cpu['C'], 0x02)
         self.assertEqual(cpu['D'], 0x03)
@@ -67,10 +79,10 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu['H'], 0x05)
         self.assertEqual(cpu['L'], 0x06)
         self.assertEqual(cpu['A'], 0x07)
-        self.assertEqual(cpu.GET_ii('BC'), 0x0102)
-        self.assertEqual(cpu.GET_ii('DE'), 0x0304)
-        self.assertEqual(cpu.GET_ii('HL'), 0x0506)
-        self.assertEqual(cpu.GET_ii('AF'), 0x0700)
+        self.assertEqual(cpu['BC'], 0x0102)
+        self.assertEqual(cpu['DE'], 0x0304)
+        self.assertEqual(cpu['HL'], 0x0506)
+        self.assertEqual(cpu['AF'], 0x0700)
         with self.assertRaises(ValueError):
             cpu.LD_r_n('X', 0x07)
         for r in "BCDEHLA":
@@ -172,6 +184,172 @@ class TestCPU(unittest.TestCase):
             func()
             self.assertEqual(cpu[regs[0]], value)
             value += 1
+
+    # 16 bit load #
+    def test_LD_dd_nn(self):
+        cpu = CPU()
+        cpu.LD_dd_nn('BC', 0x0121)
+        cpu.LD_dd_nn('DE', 0x0222)
+        cpu.LD_dd_nn('HL', 0x0323)
+        cpu.LD_dd_nn('SP', 0x0424)
+        self.assertEqual(cpu['BC'], 0x0121)
+        self.assertEqual(cpu['DE'], 0x0222)
+        self.assertEqual(cpu['HL'], 0x0323)
+        self.assertEqual(cpu['SP'], 0x0424)
+        self.assertEqual(cpu['B'], 0x01)
+        self.assertEqual(cpu['D'], 0x02)
+        self.assertEqual(cpu['H'], 0x03)
+        self.assertEqual(cpu['C'], 0x21)
+        self.assertEqual(cpu['E'], 0x22)
+        self.assertEqual(cpu['L'], 0x23)
+
+    def test_LD_ii_nn(self):
+        cpu = CPU()
+        cpu.LD_ii_nn('IX', 0x0121)
+        cpu.LD_ii_nn('IY', 0x1131)
+        self.assertEqual(cpu['IX'], 0x0121)
+        self.assertEqual(cpu['IY'], 0x1131)
+
+    def test_LD_HL__nn_(self):
+        cpu = CPU()
+        cpu[0xffff] = 0x01
+        cpu[0x0000] = 0x10
+        cpu.LD_HL__nn_(0xffff)
+        self.assertEqual(cpu['HL'], 0x1001)
+
+    def test_LD_dd__nn_(self):
+        cpu = CPU()
+        cpu[0xffff] = 0x01
+        cpu[0x0000] = 0x10
+        for dd in ['BC', 'DE', 'HL', 'SP']:
+            cpu.LD_dd__nn_(dd, 0xffff)
+            self.assertEqual(cpu[dd], 0x1001)
+
+    def test_LD_ii__nn_(self):
+        cpu = CPU()
+        cpu[0xffff] = 0x01
+        cpu[0x0000] = 0x10
+        for ii in ['IX', 'IY']:
+            cpu.LD_ii__nn_(ii, 0xffff)
+            self.assertEqual(cpu[ii], 0x1001)
+
+    def test_LD__nn__HL(self):
+        cpu = CPU()
+        cpu['HL'] = 0x1122
+        cpu.LD__nn__HL(0xffff)
+        self.assertEqual(cpu[0xffff], 0x22)
+        self.assertEqual(cpu[0x0000], 0x11)
+
+    def test_LD__nn__dd(self):
+        cpu = CPU()
+        cpu['BC'] = 0x1122
+        cpu['DE'] = 0x3344
+        cpu['HL'] = 0x5566
+        cpu['SP'] = 0x7788
+        cpu.LD__nn__dd(0xffff, 'BC')
+        cpu.LD__nn__dd(0x0001, 'DE')
+        cpu.LD__nn__dd(0x0003, 'HL')
+        cpu.LD__nn__dd(0x0005, 'SP')
+        self.assertEqual(cpu[0xffff], 0x22)
+        self.assertEqual(cpu[0x0000], 0x11)
+        self.assertEqual(cpu[0x0001], 0x44)
+        self.assertEqual(cpu[0x0002], 0x33)
+        self.assertEqual(cpu[0x0003], 0x66)
+        self.assertEqual(cpu[0x0004], 0x55)
+        self.assertEqual(cpu[0x0005], 0x88)
+        self.assertEqual(cpu[0x0006], 0x77)
+
+    def test_LD__nn__ii(self):
+        cpu = CPU()
+        cpu['IX'] = 0x0102
+        cpu['IY'] = 0x0304
+        cpu.LD__nn__ii(0xffff, 'IX')
+        cpu.LD__nn__ii(0x0001, 'IY')
+        self.assertEqual(cpu[0xffff], 0x02)
+        self.assertEqual(cpu[0x0000], 0x01)
+        self.assertEqual(cpu[0x0001], 0x04)
+        self.assertEqual(cpu[0x0002], 0x03)
+
+    def test_LD_SP_HL(self):
+        cpu = CPU()
+        cpu['HL'] = 0x12ab
+        cpu.LD_SP_HL()
+        self.assertEqual(cpu['SP'], 0x12ab)
+
+    def test_LD_SP_ii(self):
+        cpu = CPU()
+        cpu['IX'] = 0x12ab
+        cpu['IY'] = 0x23cd
+        cpu.LD_SP_ii('IX')
+        self.assertEqual(cpu['SP'], 0x12ab)
+        cpu.LD_SP_ii('IY')
+        self.assertEqual(cpu['SP'], 0x23cd)
+
+    def test_PUSH_POP_qq(self):
+        cpu = CPU()
+        cpu['BC'] = 0x0102
+        cpu['DE'] = 0x0304
+        cpu['HL'] = 0x0506
+        cpu['AF'] = 0x0607
+        cpu.PUSH_qq('BC')
+        self.assertEqual(cpu['SP'], 0xfffe)
+        self.assertEqual(cpu[0xfffe], 0x02)
+        self.assertEqual(cpu[0xffff], 0x01)
+        self.assertEqual(cpu.get16(0xfffe), 0x0102)
+        cpu.PUSH_qq('DE')
+        self.assertEqual(cpu['SP'], 0xfffc)
+        self.assertEqual(cpu[0xfffc], 0x04)
+        self.assertEqual(cpu[0xfffd], 0x03)
+        self.assertEqual(cpu.get16(0xfffc), 0x0304)
+        cpu.PUSH_qq('HL')
+        self.assertEqual(cpu['SP'], 0xfffa)
+        self.assertEqual(cpu[0xfffa], 0x06)
+        self.assertEqual(cpu[0xfffb], 0x05)
+        self.assertEqual(cpu.get16(0xfffa), 0x0506)
+        cpu.PUSH_qq('AF')
+        self.assertEqual(cpu['SP'], 0xfff8)
+        self.assertEqual(cpu[0xfff8], 0x07)
+        self.assertEqual(cpu[0xfff9], 0x06)
+        self.assertEqual(cpu.get16(0xfff8), 0x0607)
+        cpu['BC'] = 0x0000
+        cpu['DE'] = 0x0000
+        cpu['HL'] = 0x0000
+        cpu['AF'] = 0x0000
+        cpu.POP_qq('BC')
+        self.assertEqual(cpu['SP'], 0xfffa)
+        self.assertEqual(cpu['BC'], 0x0607)
+        cpu.POP_qq('DE')
+        self.assertEqual(cpu['SP'], 0xfffc)
+        self.assertEqual(cpu['DE'], 0x0506)
+        cpu.POP_qq('HL')
+        self.assertEqual(cpu['SP'], 0xfffe)
+        self.assertEqual(cpu['HL'], 0x0304)
+        cpu.POP_qq('AF')
+        self.assertEqual(cpu['SP'], 0x0000)
+        self.assertEqual(cpu['AF'], 0x0102)
+
+    def test_PUSH_POP_ii(self):
+        cpu = CPU()
+        cpu['IX'] = 0x0102
+        cpu['IY'] = 0x0304
+        cpu.PUSH_ii('IX')
+        self.assertEqual(cpu['SP'], 0xfffe)
+        self.assertEqual(cpu[0xfffe], 0x02)
+        self.assertEqual(cpu[0xffff], 0x01)
+        self.assertEqual(cpu.get16(0xfffe), 0x0102)
+        cpu.PUSH_ii('IY')
+        self.assertEqual(cpu['SP'], 0xfffc)
+        self.assertEqual(cpu[0xfffc], 0x04)
+        self.assertEqual(cpu[0xfffd], 0x03)
+        self.assertEqual(cpu.get16(0xfffc), 0x0304)
+        cpu['IX'] = 0x0000
+        cpu['IY'] = 0x0000
+        cpu.POP_ii('IX')
+        self.assertEqual(cpu['SP'], 0xfffe)
+        self.assertEqual(cpu['IX'], 0x0304)
+        cpu.POP_ii('IY')
+        self.assertEqual(cpu['SP'], 0x0000)
+        self.assertEqual(cpu['IY'], 0x0102)
 
     # ######################################################3
     # 8 bit getter

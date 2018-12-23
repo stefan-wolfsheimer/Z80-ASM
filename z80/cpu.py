@@ -27,8 +27,10 @@ from assertions import assert_q
 from assertions import assert_r
 from assertions import assert_b
 from assertions import assert_ii
+from assertions import assert_dd
 from assertions import assert_aa
 from assertions import assert_ss
+from assertions import assert_qq
 from assertions import assert_flag
 
 from util import parity
@@ -37,7 +39,7 @@ from instruction_group import InstructionGroup
 from instruction_group import InstructionDecor as I
 from register import RegisterSet
 from register import RegisterPlusOffset
-from register import PC
+from register import MEMSIZE
 from register import HL
 from register import BC
 from register import DE
@@ -74,6 +76,8 @@ def add_instruction_group(group, instr_set):
     grp = group.name
     for entry in instr_set:
         for expanded in expand_template(entry):
+            if isinstance(expanded['opcode'], int):
+                expanded['opcode'] = (expanded['opcode'],)
             instr = Instruction(assembler=expanded['instr'],
                                 opcode=list(expanded['opcode']),
                                 func=expanded['func'],
@@ -115,20 +119,14 @@ class CPU(object):
     def __setitem__(self, key, value):
         self.reg[key] = value
 
+    def get16(self, key):
+        return self.reg.get16(key)
+
+    def set16(self, key, value):
+        self.reg.set16(key, value)
+
     def fetch(self):
-        # todo 4 byte instructions
-        code1 = self['PC']
-        if code1 in ALL_INSTRUCTIONS:
-            if isinstance(ALL_INSTRUCTIONS[code1], dict):
-                code2 = self[PC(1)]
-                if code2 in ALL_INSTRUCTIONS[code1]:
-                    return ALL_INSTRUCTIONS[code1][code2]
-                else:
-                    return None
-            else:
-                return ALL_INSTRUCTIONS[code1]
-        else:
-            raise NotImplemented('instruction not implemented %02x' % code1)
+        return ALL_INSTRUCTIONS.fetch(self)
 
     def instr_cycle(self):
         instr = self.instr_set.fetch(self)
@@ -245,6 +243,134 @@ class CPU(object):
         """ R <- A """
         self['R'] = self['A']
 
+    # ##################
+    # 16 bit load group
+    # ##################
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["00{0}0001", "nn"], expand=['dd'])
+    def LD_dd_nn(self, dd, nn):
+        """ {0} <- nn """
+        assert_dd(dd)
+        assert_nn(nn)
+        self[dd] = nn
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}101", 0x21, "nn"], expand=['ii'])
+    def LD_ii_nn(self, ii, nn):
+        """ {0} <- nn """
+        assert_ii(ii)
+        assert_nn(nn)
+        self[ii] = nn
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, [0x2a, "nn"])
+    def LD_HL__nn_(self, nn):
+        """ HL <- (nn) """
+        assert_nn(nn)
+        self['HL'] = self.get16(nn)
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, [0xed, "01{0}1011", "nn"], expand=['dd'])
+    def LD_dd__nn_(self, dd, nn):
+        """ dd <- (nn) """
+        assert_nn(nn)
+        assert_dd(dd)
+        self[dd] = self.get16(nn)
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}101", 0x2a, "nn"], expand=['ii'])
+    def LD_ii__nn_(self, ii, nn):
+        """ {0} <- (nn) """
+        assert_ii(ii)
+        assert_nn(nn)
+        self[ii] = self.get16(nn)
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, [0x22, "nn"])
+    def LD__nn__HL(self, nn):
+        """ (nn) <- HL, """
+        assert_nn(nn)
+        self.set16(nn, self['HL'])
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, [0xed, "01{0}0011", "nl", "nh"], expand=['dd'])
+    def LD__nn__dd(self, nn, dd):
+        """ (nn) <- dd """
+        assert_nn(nn)
+        assert_dd(dd)
+        self.set16(nn, self[dd])
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}101", 0x22, "nn"], expand=['ii'])
+    def LD__nn__ii(self, nn, ii):
+        """ (nn) <- {0} """
+        assert_ii(ii)
+        assert_nn(nn)
+        self.set16(nn, self[ii])
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, [0xf9])
+    def LD_SP_HL(self):
+        """ SP <- HL """
+        self['SP'] = self['HL']
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}101", 0xf9], expand=['ii'])
+    def LD_SP_ii(self, ii):
+        """ SP <- {0} """
+        assert_ii(ii)
+        self['SP'] = self[ii]
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}0101"], expand=['qq'])
+    def PUSH_qq(self, qq):
+        """ (SP-2) <- qq,
+            SP <- SP-2 """
+        assert_qq(qq)
+        self.DEC_ss('SP', 2)
+        self.set16(self['SP'], self[qq])
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}101", 0xe5], expand=['ii'])
+    def PUSH_ii(self, ii):
+        """ (SP-2) <- {0},
+            SP <- SP-2 """
+        assert_ii(ii)
+        self.DEC_ss('SP', 2)
+        self.set16(self['SP'], self[ii])
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}0001"], expand=['qq'])
+    def POP_qq(self, qq):
+        """ qq <- (SP),
+            SP <- SP+2 """
+        self[qq] = self.get16(self['SP'])
+        self.INC_ss('SP', 2)
+
+    @I(SIXTEEN_BIT_LOAD_GROUP, ["11{0}101", 0xe1], expand=['ii'])
+    def POP_ii(self, ii):
+        """ {0} <- (SP)
+            SP <- SP+2 """
+        assert_ii(ii)
+        self[ii] = self.get16(self['SP'])
+        self.INC_ss('SP', 2)
+
+    # ##################
+    # 16 bit arithmetic
+    # ##################
+    @I(SIXTEEN_BIT_ARITHMETIC_GROUP, ["00{0}0011"], tstates=6, expand=['ss'])
+    def INC_ss(self, ss, n=1):
+        """ {0} <- {0} + 1"""
+        assert_ss(ss)
+        self[ss] = (self[ss] + n) % MEMSIZE
+
+    @I(SIXTEEN_BIT_ARITHMETIC_GROUP, ["11{0}101", 0x23],
+       tstates=10, expand=['ii'])
+    def INC_ii(self, ii, n=1):
+        """ {0} <- {0} - 1 """
+        assert_ii(ii)
+        self[ii] = (self[ii] + n) % MEMSIZE
+
+    @I(SIXTEEN_BIT_ARITHMETIC_GROUP, ["00{0}1011"], tstates=6, expand=['ss'])
+    def DEC_ss(self, ss, n=1):
+        """ {0} <- {0} - 1"""
+        assert_ss(ss)
+        self[ss] = (self[ss] - n) % MEMSIZE
+
+    @I(SIXTEEN_BIT_ARITHMETIC_GROUP, ["11{0}101", 0x2b],
+       tstates=10, expand=['ii'])
+    def DEC_ii(self, ii, n=1):
+        """ {0} <- {0} - 1"""
+        assert_ii(ii)
+        self[ii] = (self[ii] - n) % MEMSIZE
+
     # ########################################
     def LD_A_n(self, n):
         """ LD A,n """
@@ -301,24 +427,24 @@ class CPU(object):
         assert_nn(nn)
         self.IY = nn
 
-    def LD_ii_nn(self, ii, nn):
-        """ LD dd, nn"""
-        assert_ii(ii)
-        assert_nn(nn)
-        if ii == 'SP':
-            self.LD_SP_nn(nn)
-        elif ii == 'PC':
-            self.LD_PC_nn(nn)
-        elif ii == 'IX':
-            self.LD_IX_nn(nn)
-        elif ii == 'IY':
-            self.LD_IY_nn(nn)
-        elif ii == 'AF':
-            self.LD_F_n(nn & 0x00ff)
-            self.LD_A_n(nn >> 8)
-        else:
-            self.LD_r_n(ii[1], nn & 0x00ff)
-            self.LD_r_n(ii[0], nn >> 8)
+    # def LD_ii_nn(self, ii, nn):
+    #    """ LD dd, nn"""
+    #    assert_ii(ii)
+    #    assert_nn(nn)
+    #    if ii == 'SP':
+    #        self.LD_SP_nn(nn)
+    #    elif ii == 'PC':
+    #        self.LD_PC_nn(nn)
+    #    elif ii == 'IX':
+    #        self.LD_IX_nn(nn)
+    #    elif ii == 'IY':
+    #        self.LD_IY_nn(nn)
+    #    elif ii == 'AF':
+    #        self.LD_F_n(nn & 0x00ff)
+    #        self.LD_A_n(nn >> 8)
+    #    else:
+    #        self.LD_r_n(ii[1], nn & 0x00ff)
+    #        self.LD_r_n(ii[0], nn >> 8)
 
     def LD_index_nn(self, index, nn):
         """ LD IX, nn or LD IY, nn"""
@@ -332,22 +458,6 @@ class CPU(object):
         assert_n(nn2)
         self.LD_ref_nn_n(nn1, nn2 & 0xff)
         self.LD_ref_nn_n((nn1 + 1) % CPU.MEMSIZE, nn2 >> 8)
-
-    def PUSH_qq(self, qq):
-        self.DEC_SP(2)
-        self.LD_ref_nn_nn(self.GET_SP(), self.GET_ii(qq))
-
-    def PUSH_ii(self, ii):
-        self.DEC_SP(2)
-        self.LD_ref_nn_nn(self.GET_SP(), self.GET_ii(ii))
-
-    def POP_qq(self, qq):
-        self.LD_ii_nn(qq, self.GET_ref_nn(self.GET_SP()))
-        self.INC_SP(2)
-
-    def POP_ii(self, ii):
-        self.LD_ii_nn(ii, self.GET_ref_nn(self.GET_SP()))
-        self.INC_SP(2)
 
     # 8 bit getter #
     def GET_r(self, r):
@@ -810,20 +920,6 @@ class CPU(object):
         """ SP <- SP - n """
         assert_n(n)
         self.SP = (self.SP - n) % CPU.MEMSIZE
-
-    def INC_ii(self, ii, n=1):
-        """ ii <- ii + n"""
-        assert_aa(ii)
-        value = self.GET_ii(ii)
-        value = (value + n) % CPU.MEMSIZE
-        self.LD_ii_nn(ii, value)
-
-    def DEC_ii(self, ii, n=1):
-        """ ii <- ii - n"""
-        assert_aa(ii)
-        value = self.GET_ii(ii)
-        value = (value - n) % CPU.MEMSIZE
-        self.LD_ii_nn(ii, value)
 
     def ADD_ii_nn(self, ii, nn, carry=0):
         assert_aa(ii)
