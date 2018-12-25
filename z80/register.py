@@ -1,5 +1,6 @@
 from assertions import assert_aa
 from assertions import assert_nn
+from assertions import assert_q
 from assertions import assert_n
 from assertions import assert_d
 
@@ -16,7 +17,7 @@ class RegisterPlusOffset(object):
         self.memonic = memonic
         self._len = 1 if len is None else len
 
-    def offset(self, nn):
+    def __call__(self, nn):
         assert_nn(nn)
         return (nn + self.d) % MEMSIZE
 
@@ -49,6 +50,14 @@ def HL(d=0):
     return RegisterPlusOffset('HL', d)
 
 
+def IX(d=0):
+    return RegisterPlusOffset('IX', d)
+
+
+def IY(d=0):
+    return RegisterPlusOffset('IY', d)
+
+
 class RegisterSet(object):
     FLAG_MASK = {'S': 0x80,
                  'Z': 0x40,
@@ -70,24 +79,24 @@ class RegisterSet(object):
                                   'IY': 0x0000,
                                   'PC': 0x0000,
                                   'SP': 0x0000}
-        self.alt_register_set = self.main_register_set.copy()
+        self.alt_register_set = {'B': 0x00, 'C': 0x00,
+                                 'D': 0x00, 'E': 0x00,
+                                 'H': 0x00, 'L': 0x00,
+                                 'A': 0x00, 'F': 0x00,
+                                 'I': 0x00, 'R': 0x00}
         self.mem = bytearray(MEMSIZE)
 
     def __getitem__(self, key):
-        def get_reg_flag(f):
-            if self.main_register_set['F'] & RegisterSet.FLAG_MASK[f]:
-                return 1
-            else:
-                return 0
-
         if key in self.main_register_set:
             return self.main_register_set[key]
         elif key in ['BC', 'DE', 'HL', 'AF', 'IX', 'IY', 'SP', 'PC']:
             return self.get16(key)
         elif key in RegisterSet.FLAG_MASK:
-            get_reg_flag(key)
+            return 1 \
+                if self.main_register_set['F'] & RegisterSet.FLAG_MASK[key] \
+                else 0
         elif isinstance(key, RegisterPlusOffset):
-            return self.mem[key.offset(self[key.reg])]
+            return self.mem[key(self[key.reg])]
         elif isinstance(key, int):
             assert_nn(key)
             return self.mem[key]
@@ -109,7 +118,7 @@ class RegisterSet(object):
                                                 RegisterSet.FLAG_MASK[key])
         elif isinstance(key, RegisterPlusOffset):
             assert_n(value)
-            self.mem[key.offset(self[key.reg])] = value
+            self.mem[key(self[key.reg])] = value
         elif isinstance(key, int):
             assert_nn(key)
             assert_n(value)
@@ -122,15 +131,23 @@ class RegisterSet(object):
             key in self.main_register_set or \
             key in RegisterSet.FLAG_MASK
 
+    def ex_q_alt_q(self, q):
+        assert_q(q)
+        alt_value = self.alt_register_set[q]
+        self.alt_register_set[q] = self.main_register_set[q]
+        self.main_register_set[q] = alt_value
+
     def get16(self, key):
         if key in ['BC', 'DE', 'HL', 'AF']:
             return ((self.main_register_set[key[0]] << 8) +
                     (self.main_register_set[key[1]]))
         elif key in ['IX', 'IY', 'SP', 'PC']:
             return self.main_register_set[key]
+        elif isinstance(key, RegisterPlusOffset):
+            nn = key(self[key.reg])
+            return self[nn] + (self[(nn + 1) % MEMSIZE] << 8)
         elif isinstance(key, int):
             assert_nn(key)
-            np1 = (key + 1) % MEMSIZE
             return self[key] + (self[(key + 1) % MEMSIZE] << 8)
         else:
             raise KeyError('cannot access memory: ' + str(key))
@@ -142,6 +159,10 @@ class RegisterSet(object):
             self.main_register_set[key[0]] = (value >> 8)
         elif key in ['IX', 'IY', 'SP', 'PC']:
             self.main_register_set[key] = value
+        elif isinstance(key, RegisterPlusOffset):
+            nn = key(self[key.reg])
+            self[nn] = (value & 0x00ff)
+            self[(nn + 1) % MEMSIZE] = (value >> 8)
         elif isinstance(key, int):
             assert_nn(key)
             self[key] = (value & 0x00ff)
@@ -154,3 +175,14 @@ class RegisterSet(object):
             v = self.main_register_set[r]
             self.main_register_set[r] = self.alt_register_set[r]
             self.alt_register_set = v
+
+    def get_flags(self, V_or_P='V'):
+        if V_or_P == 'V':
+            flags = 'SZ5H3VNC'
+        else:
+            flags = 'SZ5H3PNC'
+        ret = ''
+        for f in flags:
+            if self[f]:
+                ret += f
+        return ret

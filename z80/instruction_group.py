@@ -1,8 +1,45 @@
 import re
 from functools import wraps
-from instr_template_expansion import REGISTER_CODE
 from instruction import Instruction
 from register import PC
+
+REGISTER_CODE = {'r': {'A': '111',
+                       'B': '000',
+                       'C': '001',
+                       'D': '010',
+                       'E': '011',
+                       'H': '100',
+                       'L': '101'},
+                 'b': {'0': '000',
+                       '1': '001',
+                       '2': '010',
+                       '3': '011',
+                       '4': '100',
+                       '5': '101',
+                       '6': '110',
+                       '7': '111'},
+                 "dd": {'BC': '00',
+                        'DE': '01',
+                        'HL': '10',
+                        'SP': '11'},
+                 "qq": {'BC': '00',
+                        'DE': '01',
+                        'HL': '10',
+                        'AF': '11'},
+                 "ss": {'BC': '00',
+                        'DE': '01',
+                        'HL': '10',
+                        'SP': '11'},
+                 "pp": {'BC': '00',
+                        'DE': '01',
+                        'IX': '10',
+                        'SP': '11'},
+                 "rr": {'BC': '00',
+                        'DE': '01',
+                        'IY': '10',
+                        'SP': '11'},
+                 "ii": {'IX': '011',
+                        'IY': '111'}}
 
 
 FUNCTION_ARGUMENT = '(_([a-zA-Z]{1,2}|_[a-zA-Z]{2}_|_ii_d_))?'
@@ -22,6 +59,18 @@ def enum_register_codes(r_codes):
         return [((name,) + name_rhs, (code,) + code_rhs)
                 for (name, code) in REGISTER_CODE[r_codes[0]].items()
                 for (name_rhs, code_rhs) in enum_register_codes(r_codes[1:])]
+
+
+def encode_opcode(pattern, codes):
+    ret = []
+    for p in pattern:
+        if isinstance(p, int):
+            ret.append(p)
+        elif re.match('^[0-9{}]+$', p):
+            ret.append(int(p.format(*codes), 2))
+        else:
+            ret.append(p)
+    return ret
 
 
 def function_name_to_assembler(func_name, expand):
@@ -56,14 +105,6 @@ class InstructionDecor(object):
         self.assembler = assembler
 
     def __call__(self, func):
-        def encode_opcode(opt, codes):
-            if isinstance(opt, int):
-                return opt
-            elif re.match('^[0-9{}]+$', opt):
-                return int(opt.format(*codes), 2)
-            else:
-                return opt
-
         @wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
@@ -76,10 +117,11 @@ class InstructionDecor(object):
                                                        zip(self.expand,
                                                            regs))
             else:
-                assembler = self.instr
+                assembler = self.assembler
             args = list(regs)
+
             instr = Instruction(assembler,
-                                [encode_opcode(c, codes) for c in self.opcode],
+                                encode_opcode(self.opcode, codes),
                                 func,
                                 args=args,
                                 tstates=self.tstates,

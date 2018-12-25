@@ -49,7 +49,9 @@ class TestCPU(unittest.TestCase):
         instr = cpu.fetch()
         self.assertIsNone(instr)
 
-    # 8 bit load #
+    # ################ #
+    # 8 bit load group #
+    # ################ #
     def test_LD_r_r(self):
         cpu = CPU()
         counter = 0x00
@@ -185,7 +187,9 @@ class TestCPU(unittest.TestCase):
             self.assertEqual(cpu[regs[0]], value)
             value += 1
 
-    # 16 bit load #
+    # ##################
+    # 16 bit load group
+    # ##################
     def test_LD_dd_nn(self):
         cpu = CPU()
         cpu.LD_dd_nn('BC', 0x0121)
@@ -202,6 +206,14 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu['C'], 0x21)
         self.assertEqual(cpu['E'], 0x22)
         self.assertEqual(cpu['L'], 0x23)
+        with self.assertRaises(ValueError):
+            cpu.LD_dd_nn('BC', 0x10000)
+        with self.assertRaises(ValueError):
+            cpu.LD_dd_nn('DE', 0x10000)
+        with self.assertRaises(ValueError):
+            cpu.LD_dd_nn('HL', 0x10000)
+        with self.assertRaises(ValueError):
+            cpu.LD_dd_nn('SP', 0x10000)
 
     def test_LD_ii_nn(self):
         cpu = CPU()
@@ -351,409 +363,385 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(cpu['SP'], 0x0000)
         self.assertEqual(cpu['IY'], 0x0102)
 
-    # ######################################################3
-    # 8 bit getter
-    @pytest.mark.skip()
-    def test_GET_ref_index_plus_d(self):
+    # ##################
+    # exchange
+    # ##################
+    def test_EX_DE_HL(self):
         cpu = CPU()
-        cpu.LD_IX_nn(0xfffd)
-        cpu.LD_ref_nn_n(0x0000, 0x10)
-        cpu.LD_ref_nn_n(0x0001, 0x00)
-        cpu.LD_ref_nn_n(0x0002, 0x00)
-        cpu.LD_ref_nn_n(0x0003, 0x03)
-        cpu.LD_PC_nn(0x0001)
-        self.assertEqual(cpu.GET_ref_index_plus_d('IX'), 0x10)
+        cpu['DE'] = 0x1234
+        cpu['HL'] = 0x5678
+        cpu.EX_DE_HL()
+        self.assertEqual(cpu['DE'], 0x5678)
+        self.assertEqual(cpu['HL'], 0x1234)
+        cpu.EX_DE_HL()
+        self.assertEqual(cpu['DE'], 0x1234)
+        self.assertEqual(cpu['HL'], 0x5678)
 
-    # 16 bit getter
-    @pytest.mark.skip()
-    def test_GET_ii(self):
+    def test_EX_AF_alt_AF(self):
         cpu = CPU()
-        cpu.LD_r_n('B', 0x20)
-        cpu.LD_r_n('C', 0x22)
-        cpu.LD_r_n('D', 0x30)
-        cpu.LD_r_n('E', 0x32)
-        cpu.LD_r_n('H', 0x40)
-        cpu.LD_r_n('L', 0x42)
-        cpu.LD_r_n('A', 0x50)
-        cpu.LD_F_n(0x52)
-        cpu.LD_PC_nn(0x6062)
-        cpu.LD_SP_nn(0x7072)
-        cpu.LD_IX_nn(0x8082)
-        cpu.LD_IY_nn(0x9092)
-        self.assertEqual(cpu.GET_ii('BC'), 0x2022)
-        self.assertEqual(cpu.GET_ii('DE'), 0x3032)
-        self.assertEqual(cpu.GET_ii('HL'), 0x4042)
-        self.assertEqual(cpu.GET_ii('AF'), 0x5052)
-        self.assertEqual(cpu.GET_ii('PC'), 0x6062)
-        self.assertEqual(cpu.GET_ii('SP'), 0x7072)
-        self.assertEqual(cpu.GET_ii('IX'), 0x8082)
-        self.assertEqual(cpu.GET_ii('IY'), 0x9092)
+        cpu['A'] = 0x12
+        cpu['F'] = 0x34
+        self.assertEqual(cpu['AF'], 0x1234)
+        cpu.EX_AF_alt_AF()
+        self.assertEqual(cpu['AF'], 0x0000)
+        cpu['A'] = 0x56
+        cpu['F'] = 0x78
+        self.assertEqual(cpu['AF'], 0x5678)
+        cpu.EX_AF_alt_AF()
+        self.assertEqual(cpu['AF'], 0x1234)
+        cpu.EX_AF_alt_AF()
+        self.assertEqual(cpu['AF'], 0x5678)
 
-    @pytest.mark.skip()
-    def test_GET_ii_plus_d(self):
+    def test_EXX(self):
         cpu = CPU()
-        self.assertEqual(cpu.GET_ii_plus_d('PC', -2), 0xfffe)
-        self.assertEqual(cpu.GET_ii_plus_d('PC', 0), 0x0000)
-        self.assertEqual(cpu.GET_ii_plus_d('PC', 1), 0x0001)
-        self.assertEqual(cpu.GET_ii_plus_d('PC', 2), 0x0002)
-        cpu.LD_PC_nn(0xffff)
-        self.assertEqual(cpu.GET_ii_plus_d('PC', -1), 0xfffe)
-        self.assertEqual(cpu.GET_ii_plus_d('PC', 1), 0x0000)
-        self.assertEqual(cpu.GET_ii_plus_d('PC', 2), 0x0001)
-        self.assertEqual(cpu.GET_ii_plus_d('PC', 3), 0x0002)
+        cpu['BC'] = 0x1122
+        cpu['DE'] = 0x3344
+        cpu['HL'] = 0x5566
+        cpu.EXX()
+        self.assertEqual(cpu['BC'], 0x0000)
+        self.assertEqual(cpu['DE'], 0x0000)
+        self.assertEqual(cpu['HL'], 0x0000)
+        cpu['BC'] = 0x7788
+        cpu['DE'] = 0x99aa
+        cpu['HL'] = 0xbbcc
+        cpu.EXX()
+        self.assertEqual(cpu['BC'], 0x1122)
+        self.assertEqual(cpu['DE'], 0x3344)
+        self.assertEqual(cpu['HL'], 0x5566)
+        cpu.EXX()
+        self.assertEqual(cpu['BC'], 0x7788)
+        self.assertEqual(cpu['DE'], 0x99aa)
+        self.assertEqual(cpu['HL'], 0xbbcc)
 
-    @pytest.mark.skip()
-    def test_GET_ref2_nn(self):
+    def test_EX__SP__HL(self):
         cpu = CPU()
-        cpu.LD_ref_nn_n(0xffff, 0x11)
-        cpu.LD_ref_nn_n(0x0000, 0x22)
-        cpu.LD_ref_nn_n(0x0001, 0x33)
-        self.assertEqual(cpu.GET_ref2_nn(0x0000), 0x3322)
-        self.assertEqual(cpu.GET_ref2_nn(0xffff), 0x2211)
+        cpu['SP'] = 0xffff
+        cpu[0xffff] = 0x22
+        cpu[0x0000] = 0x11
+        cpu['HL'] = 0x3344
+        cpu.EX__SP__HL()
+        self.assertEqual(cpu.get16(0xffff), 0x3344)
+        self.assertEqual(cpu['HL'], 0x1122)
 
-    # 16 bit load
-    @pytest.mark.skip()
-    def test_GET_ref2_PC_plus_d(self):
+    def test_EX__SP__ii(self):
         cpu = CPU()
-        cpu.LD_ref_nn_n(0xffff, 0x11)
-        cpu.LD_ref_nn_n(0x0000, 0x22)
-        cpu.LD_ref_nn_n(0x0001, 0x33)
-        cpu.LD_PC_nn(0xfffe)
-        self.assertEqual(cpu.GET_ref2_PC_plus_d(0), 0x1100)
-        self.assertEqual(cpu.GET_ref2_PC_plus_d(1), 0x2211)
-        self.assertEqual(cpu.GET_ref2_PC_plus_d(2), 0x3322)
+        cpu['SP'] = 0xffff
+        cpu[0xffff] = 0x22
+        cpu[0x0000] = 0x11
+        cpu['IX'] = 0x3344
+        cpu['IY'] = 0x5566
+        cpu.EX__SP__ii('IX')
+        self.assertEqual(cpu['IX'], 0x1122)
+        self.assertEqual(cpu.get16(0xffff), 0x3344)
+        cpu.EX__SP__ii('IY')
+        self.assertEqual(cpu['IY'], 0x3344)
+        self.assertEqual(cpu.get16(0xffff), 0x5566)
 
-    @pytest.mark.skip()
-    def test_LD_PC_nn(self):
-        cpu = CPU()
-        with self.assertRaises(ValueError):
-            cpu.LD_PC_nn(0x10000)
-        self.assertEqual(cpu.GET_PC(), 0x0000)
+    # ##############
+    # block transfer
+    # ##############
+    # @todo
 
-    @pytest.mark.skip()
-    def test_LD_SP_nn(self):
-        cpu = CPU()
-        with self.assertRaises(ValueError):
-            cpu.LD_SP_nn(0x10000)
-        self.assertEqual(cpu.GET_SP(), 0x0000)
+    # ############
+    # Search group
+    # ############
+    # @todo
 
-    # flags
-    @pytest.mark.skip()
-    def flags2str(self, flags, V_or_P='V'):
-        ret = ''
-        if V_or_P == 'V':
-            sflags = 'SZ5H3VNC'
-        else:
-            sflags = 'SZ5H3PNC'
-        for f in sflags:
-            if f in flags and flags[f]:
-                ret += f
-        return ret
-
-    @pytest.mark.skip()
-    def test_SET_FLAGS(self):
-        cpu = CPU()
-        flags = {'S': False,
-                 'Z': False,
-                 '5': False,
-                 'H': False,
-                 '3': False,
-                 'P': False,
-                 'N': False,
-                 'C': False}
-        for f in flags:
-            self.assertFalse(cpu.GET_FLAG(f))
-        for f in flags.keys():
-            cpu.SET_FLAG(f, True)
-            v = cpu.GET_F()
-            cpu.SET_FLAG(f, True)
-            flags[f] = True
-            self.assertEqual(v, cpu.GET_F())
-            self.assertEqual(self.flags2str(flags, 'P'), cpu.GET_FLAGS('P'))
-        keys = list(flags.keys())
-        for f in keys[::-1]:
-            cpu.SET_FLAG(f, False)
-            v = cpu.GET_F()
-            cpu.SET_FLAG(f, False)
-            flags[f] = False
-            self.assertEqual(v, cpu.GET_F())
-            self.assertEqual(self.flags2str(flags, 'P'), cpu.GET_FLAGS('P'))
-        for f in flags:
-            self.assertFalse(cpu.GET_FLAG(f))
-
-    @pytest.mark.skip()
-    def test_SET_b_r(self):
-        cpu = CPU()
-        cpu.SET_b_r(1, 'A')
-        self.assertEqual(2, cpu.GET_A())
-        cpu.SET_b_r(7, 'A')
-        self.assertEqual(0x82, cpu.GET_A())
-        cpu.SET_b_r(1, 'A', 0)
-        self.assertEqual(0x80, cpu.GET_A())
-
-    @pytest.mark.skip()
-    def test_SET_b_ref_nn(self):
-        cpu = CPU()
-        cpu.SET_b_ref_nn(1, 0x0010)
-        self.assertEqual(2, cpu.GET_ref_nn(0x0010))
-        cpu.SET_b_ref_nn(7, 0x0010)
-        self.assertEqual(0x82, cpu.GET_ref_nn(0x0010))
-        cpu.SET_b_ref_nn(1, 0x0010, 0)
-        self.assertEqual(0x80, cpu.GET_ref_nn(0x0010))
-
-    @pytest.mark.skip()
-    def test_BIT_b_n(self):
-        cpu = CPU()
-        cpu.BIT_b_n(0, 0b01001011)
-        self.assertEqual(0, cpu.GET_FLAG('Z'))
-        cpu.BIT_b_n(7, 0b01001011)
-        self.assertEqual(1, cpu.GET_FLAG('Z'))
-        cpu.BIT_b_n(3, 0b01001011)
-        self.assertEqual(0, cpu.GET_FLAG('Z'))
-
-    # 8 bit arithmetic
-    @pytest.mark.skip()
+    # ################
+    # 8-bit arithmetic
+    # ################
     def test_ADD_A_n(self):
         # todo add more edge cases
         tests = [(0x00, 0x40, False, 0x40, '')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
-            cpu.SET_FLAG('C', t[2])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
+            cpu['C'] = t[2]
             cpu.ADD_A_n(t[1])
-            self.assertEqual(cpu.GET_A(), t[3])
-            self.assertEqual(cpu.GET_FLAGS('V'), t[4])
+            self.assertEqual(cpu['A'], t[3])
+            self.assertEqual(cpu.reg.get_flags('V'), t[4])
 
-    @pytest.mark.skip()
     def test_SUB_A_n(self):
         # todo add more edge cases
         tests = [(0x40, 0x40, False, 0x00, 'Z')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
-            cpu.SET_FLAG('C', t[2])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
+            cpu['C'] = t[2]
             cpu.SUB_A_n(t[1])
-            self.assertEqual(cpu.GET_A(), t[3])
-            self.assertEqual(cpu.GET_FLAGS('V'), t[4])
+            self.assertEqual(cpu['A'], t[3])
+            self.assertEqual(cpu.reg.get_flags('V'), t[4])
 
-    @pytest.mark.skip()
     def test_AND_A_n(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 0x00, 'ZHP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
             cpu.AND_A_n(t[1])
-            self.assertEqual(cpu.GET_A(), t[2])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[3])
+            self.assertEqual(cpu['A'], t[2])
+            self.assertEqual(cpu.reg.get_flags('P'), t[3])
 
-    @pytest.mark.skip()
     def test_OR_A_n(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 0x00, 'ZHP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
             cpu.OR_A_n(t[1])
-            self.assertEqual(cpu.GET_A(), t[2])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[3])
+            self.assertEqual(cpu['A'], t[2])
+            self.assertEqual(cpu.reg.get_flags('P'), t[3])
 
-    @pytest.mark.skip()
     def test_XOR_A_n(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 0x00, 'ZHP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
             cpu.XOR_A_n(t[1])
-            self.assertEqual(cpu.GET_A(), t[2])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[3])
+            self.assertEqual(cpu['A'], t[2])
+            self.assertEqual(cpu.reg.get_flags('P'), t[3])
 
-    @pytest.mark.skip()
     def test_CP_A_n(self):
         # todo add more edge cases
-        tests = [(0x00, 0x00, 'ZN')]
+        tests = [(0x00, 0x00, 0x00, 'ZN')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
-            cpu.CP_A_n(t[1])
-            self.assertEqual(cpu.GET_A(), t[0])
-            self.assertEqual(cpu.GET_FLAGS('V'), t[2])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
+            cpu.CP_n(t[1])
+            self.assertEqual(cpu['A'], t[2])
+            self.assertEqual(cpu.reg.get_flags('P'), t[3])
 
-    @pytest.mark.skip()
     def test_INC_n(self):
         # todo add more edge cases
         tests = [(0x00, 0x01, '')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
+            cpu['F'] = 0x00
             n = cpu.INC_n(t[0])
             self.assertEqual(n, t[1])
-            self.assertEqual(cpu.GET_FLAGS('V'), t[2])
+            self.assertEqual(cpu.reg.get_flags('V'), t[2])
 
-    @pytest.mark.skip()
     def test_DEC_n(self):
         # todo add more edge cases
         tests = [(0x01, 0x00, 'ZN')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
+            cpu['F'] = 0x00
             n = cpu.DEC_n(t[0])
             self.assertEqual(n, t[1])
-            self.assertEqual(cpu.GET_FLAGS('V'), t[2])
+            self.assertEqual(cpu.reg.get_flags('V'), t[2])
 
+    # ################
+    # General purpose
+    # ################
+    # @todo
+
+    # ##################
     # 16 bit arithmetic
-    @pytest.mark.skip()
-    def test_ADD_ii_nn(self):
-        # todo add more edge cases
-        tests = [(0x0000, 0x0000, 0, 0x00000, '')]
-        cpu = CPU()
-        for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_ii_nn('HL', t[0])
-            cpu.SET_FLAG('C', t[2])
-            cpu.ADD_ii_nn('HL', t[1])
-            self.assertEqual(cpu.GET_HL(), t[3])
-            self.assertEqual(cpu.GET_FLAGS('V'), t[4])
-
-    # increasing / decreasing registers
-    @pytest.mark.skip()
+    # ##################
     def test_INC_PC(self):
         cpu = CPU()
-        cpu.LD_PC_nn(0xffff)
+        cpu['PC'] = 0xffff
+        cpu['F'] = 0x00
         cpu.INC_PC(2)
-        self.assertEqual(cpu.GET_PC(), 0x0001)
+        self.assertEqual(cpu['PC'], 0x0001)
+        self.assertEqual(cpu['F'], 0x00)
 
-    @pytest.mark.skip()
-    def test_INC_SP(self):
+    def test_DEC_PC(self):
         cpu = CPU()
-        cpu.LD_SP_nn(0xffff)
-        cpu.INC_SP(2)
-        self.assertEqual(cpu.GET_SP(), 0x0001)
+        cpu['PC'] = 0x0001
+        cpu['F'] = 0x00
+        cpu.DEC_PC(2)
+        self.assertEqual(cpu['PC'], 0xffff)
+        self.assertEqual(cpu['F'], 0x00)
 
-    @pytest.mark.skip()
-    def test_DEC_SP(self):
+    def test_INC_ss(self):
         cpu = CPU()
-        cpu.LD_SP_nn(0x0001)
-        cpu.DEC_SP(2)
-        self.assertEqual(cpu.GET_SP(), 0xffff)
+        for ss in ['BC', 'DE', 'HL', 'SP']:
+            cpu[ss] = 0xffff
+            cpu['F'] = 0x00
+            cpu.INC_ss(ss, 2)
+            self.assertEqual(cpu[ss], 0x0001)
+            self.assertEqual(cpu['F'], 0x00)
 
-    @pytest.mark.skip()
+    def test_DEC_ss(self):
+        cpu = CPU()
+        for ss in ['BC', 'DE', 'HL', 'SP']:
+            cpu[ss] = 0x0001
+            cpu['F'] = 0x00
+            cpu.DEC_ss(ss, 2)
+            self.assertEqual(cpu[ss], 0xffff)
+            self.assertEqual(cpu['F'], 0x00)
+
     def test_INC_ii(self):
         cpu = CPU()
-        cpu.LD_ii_nn('DE', 0xffff)
-        cpu.INC_ii('DE')
-        self.assertEqual(cpu.GET_DE(), 0x0000)
+        for ii in ['IX', 'IY']:
+            cpu[ii] = 0xffff
+            cpu['F'] = 0x00
+            cpu.INC_ii(ii)
+            self.assertEqual(cpu[ii], 0x0000)
+            self.assertEqual(cpu['F'], 0x00)
+            cpu.INC_ii(ii, 2)
+            self.assertEqual(cpu[ii], 0x0002)
+            self.assertEqual(cpu['F'], 0x00)
 
-    @pytest.mark.skip()
     def test_DEC_ii(self):
         cpu = CPU()
-        cpu.LD_ii_nn('BC', 0x0000)
-        cpu.DEC_ii('BC')
-        self.assertEqual(cpu.GET_BC(), 0xffff)
-        cpu.DEC_ii('BC')
-        self.assertEqual(cpu.GET_BC(), 0xfffe)
+        for ii in ['IX', 'IY']:
+            cpu[ii] = 0x0000
+            cpu['F'] = 0x00
+            cpu.DEC_ii(ii)
+            self.assertEqual(cpu[ii], 0xffff)
+            self.assertEqual(cpu['F'], 0x00)
+            cpu.DEC_ii(ii, 2)
+            self.assertEqual(cpu[ii], 0xfffd)
+            self.assertEqual(cpu['F'], 0x00)
 
+    def test_ADD_ii_nn(self):
+        # todo add more edge cases
+        tests = [(0x0000, 0x0000, False, 0x00000, '')]
+        cpu = CPU()
+        for t in tests:
+            cpu['F'] = 0x00
+            cpu['HL'] = t[0]
+            cpu['DE'] = t[1]
+            cpu['C'] = t[2]
+            cpu.ADD_HL_ss('DE')
+            self.assertEqual(cpu['HL'], t[3])
+            self.assertEqual(cpu.reg.get_flags('V'), t[4])
+
+    # ################
     # rotate and shift
-    @pytest.mark.skip()
+    # ################
     def test_RL(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            self.assertEqual(cpu.shift_left_n(t[0], 'RL'), t[1])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+            cpu['F'] = 0x00
+            self.assertEqual(cpu.RL_n(t[0]), t[1])
+            self.assertEqual(cpu.reg.get_flags('P'), t[2])
 
-    @pytest.mark.skip()
     def test_RLC(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            self.assertEqual(cpu.shift_left_n(t[0], 'RLC'), t[1])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+            cpu['F'] = 0x00
+            self.assertEqual(cpu.RLC_n(t[0]), t[1])
+            self.assertEqual(cpu.reg.get_flags('P'), t[2])
 
-    @pytest.mark.skip()
     def test_SLA(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            self.assertEqual(cpu.shift_left_n(t[0], 'SLA'), t[1])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+            cpu['F'] = 0x00
+            self.assertEqual(cpu.SLA_n(t[0]), t[1])
+            self.assertEqual(cpu.reg.get_flags('P'), t[2])
 
-    @pytest.mark.skip()
     def test_RR(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            self.assertEqual(cpu.shift_right_n(t[0], 'RR'), t[1])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+            cpu['F'] = 0x00
+            self.assertEqual(cpu.RR_n(t[0]), t[1])
+            self.assertEqual(cpu.reg.get_flags('P'), t[2])
 
-    @pytest.mark.skip()
     def test_RRC(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            self.assertEqual(cpu.shift_right_n(t[0], 'RRC'), t[1])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+            cpu['F'] = 0x00
+            self.assertEqual(cpu.RRC_n(t[0]), t[1])
+            self.assertEqual(cpu.reg.get_flags('P'), t[2])
 
-    @pytest.mark.skip()
     def test_SRL(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            self.assertEqual(cpu.shift_right_n(t[0], 'SRL'), t[1])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+            cpu['F'] = 0x00
+            self.assertEqual(cpu.SRL_n(t[0]), t[1])
+            self.assertEqual(cpu.reg.get_flags('P'), t[2])
 
-    @pytest.mark.skip()
     def test_SRA(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            self.assertEqual(cpu.shift_right_n(t[0], 'SRA'), t[1])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[2])
+            cpu['F'] = 0x00
+            self.assertEqual(cpu.SRA_n(t[0]), t[1])
+            self.assertEqual(cpu.reg.get_flags('P'), t[2])
 
-    @pytest.mark.skip()
     def test_RLD(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
             self.assertEqual(cpu.RLD_n(t[1]), t[3])
-            self.assertEqual(cpu.GET_A(), t[2])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[4])
+            self.assertEqual(cpu['A'], t[2])
+            self.assertEqual(cpu.reg.get_flags('P'), t[4])
 
-    @pytest.mark.skip()
     def test_RRD(self):
         # todo add more edge cases
         tests = [(0x00, 0x00, 0x00, 0x00, 'ZP')]
         cpu = CPU()
         for t in tests:
-            cpu.LD_F_n(0x00)
-            cpu.LD_A_n(t[0])
+            cpu['F'] = 0x00
+            cpu['A'] = t[0]
             self.assertEqual(cpu.RRD_n(t[1]), t[3])
-            self.assertEqual(cpu.GET_A(), t[2])
-            self.assertEqual(cpu.GET_FLAGS('P'), t[4])
+            self.assertEqual(cpu['A'], t[2])
+            self.assertEqual(cpu.reg.get_flags('P'), t[4])
+
+    # #######################
+    # Bit set, reset and test
+    # #######################
+    def test_SET_b_r(self):
+        cpu = CPU()
+        cpu.SET_b_r(1, 'A')
+        self.assertEqual(2, cpu['A'])
+        cpu.SET_b_r(1, 'A')
+        self.assertEqual(2, cpu['A'])
+        cpu.SET_b_r(7, 'A')
+        self.assertEqual(0x82, cpu['A'])
+        cpu.RES_b_r(1, 'A')
+        self.assertEqual(0x80, cpu['A'])
+
+    def test_BIT_b_n(self):
+        cpu = CPU()
+        cpu.BIT_b_n(0, 0b01001011)
+        self.assertEqual(0, cpu['Z'])
+        cpu.BIT_b_n(7, 0b01001011)
+        self.assertEqual(1, cpu['Z'])
+        cpu.BIT_b_n(3, 0b01001011)
+        self.assertEqual(0, cpu['Z'])
+
+    # #######################
+    # jump
+    # #######################
+    # @todo
+
+    # #######################
+    # call and return
+    # #######################
+    # @todo
+
+    # #######################
+    # input and output
+    # #######################
+    # @todo
 
 
 if __name__ == '__main__':
