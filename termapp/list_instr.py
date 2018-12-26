@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.insert(0,
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from z80.cpu import ALL_INSTRUCTIONS  # noqa: F402
+from z80.cpu import INSTRUCTION_SET  # noqa: F402
 
 
 def format_code(code):
@@ -23,7 +23,7 @@ def list_instructions(instructions, codes=[]):
 
 
 def main():
-    list_instructions(ALL_INSTRUCTIONS.instructions)
+    list_instructions(INSTRUCTION_SET.instructions)
 
 
 if __name__ == "__main__":

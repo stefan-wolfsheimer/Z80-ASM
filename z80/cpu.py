@@ -34,7 +34,8 @@ from assertions import assert_pp
 
 from util import parity
 from instruction_group import InstructionGroup
-from instruction_group import InstructionDecor as I
+from instruction_template import InstructionTemplate as I
+from instruction_set import InstructionSet
 from register import RegisterSet
 from register import RegisterPlusOffset
 from register import MEMSIZE
@@ -43,28 +44,29 @@ from register import BC
 from register import DE
 
 
-ALL_INSTRUCTIONS = InstructionGroup("all instructions")
+INSTRUCTION_SET = InstructionSet()
+
 EIGHT_BIT_LOAD_GROUP = InstructionGroup("8 bit load group",
-                                        ALL_INSTRUCTIONS)
+                                        INSTRUCTION_SET)
 SIXTEEN_BIT_LOAD_GROUP = InstructionGroup("16 bit load group",
-                                          ALL_INSTRUCTIONS)
+                                          INSTRUCTION_SET)
 EXCHANGE_GROUP = InstructionGroup("exchange group",
-                                  ALL_INSTRUCTIONS)
+                                  INSTRUCTION_SET)
 BLOCK_TRANSFER_GROUP = InstructionGroup("block transfer group",
-                                        ALL_INSTRUCTIONS)
+                                        INSTRUCTION_SET)
 SEARCH_GROUP = InstructionGroup("search group",
-                                ALL_INSTRUCTIONS)
+                                INSTRUCTION_SET)
 EIGHT_BIT_ARITHMETIC_GROUP = InstructionGroup("8 bit arithmetic group",
-                                              ALL_INSTRUCTIONS)
+                                              INSTRUCTION_SET)
 GENERAL_PURPOSE_GROUP = InstructionGroup("general purpose group",
-                                         ALL_INSTRUCTIONS)
+                                         INSTRUCTION_SET)
 SIXTEEN_BIT_ARITHMETIC_GROUP = InstructionGroup("16 bit arithmetic group",
-                                                ALL_INSTRUCTIONS)
+                                                INSTRUCTION_SET)
 ROTATE_AND_SHIFT_GROUP = InstructionGroup("rotate and shift group",
-                                          ALL_INSTRUCTIONS)
+                                          INSTRUCTION_SET)
 
 BIT_SET_RESET_TEST_GROUP = InstructionGroup("bit set reset test group",
-                                            ALL_INSTRUCTIONS)
+                                            INSTRUCTION_SET)
 
 
 class CPU(object):
@@ -84,7 +86,7 @@ class CPU(object):
         self.reg.set16(key, value)
 
     def fetch(self):
-        return ALL_INSTRUCTIONS.fetch(self)
+        return INSTRUCTION_SET.fetch(self)
 
     def instr_cycle(self):
         instr = self.instr_set.fetch(self)
@@ -168,12 +170,12 @@ class CPU(object):
     @I(EIGHT_BIT_LOAD_GROUP, [0x02])
     def LD__BC__A(self):
         """ (BC) <- A """
-        self[BC()] = self['A']
+        self[self['BC']] = self['A']
 
     @I(EIGHT_BIT_LOAD_GROUP, [0x12])
     def LD__DE__A(self):
         """ (DE) <- A """
-        self[DE()] = self['A']
+        self[self['DE']] = self['A']
 
     @I(EIGHT_BIT_LOAD_GROUP, [0x32, "nn"])
     def LD__nn__A(self, nn):
@@ -184,21 +186,27 @@ class CPU(object):
     @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x57])
     def LD_A_I(self):
         """ A <- I """
+        # 010 10 111
+        # @todo: set flags
         self['A'] = self['I']
 
     @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x5f])
     def LD_A_R(self):
         """ A <- R """
+        # 010 11 111
+        # @todo: set flags
         self['A'] = self['R']
 
     @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x47])
     def LD_I_A(self):
         """ I <- A """
+        # 010 00 111
         self['I'] = self['A']
 
     @I(EIGHT_BIT_LOAD_GROUP, [0xed, 0x4f])
     def LD_R_A(self):
         """ R <- A """
+        # 010 01 111
         self['R'] = self['A']
 
     # ##################
