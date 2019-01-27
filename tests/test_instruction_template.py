@@ -20,11 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import unittest
-from z80.instruction_group import enum_register_codes
-from z80.instruction_group import function_name_to_assembler
+from z80.instruction_template import enum_register_codes
+from z80.instruction_template import function_name_to_assembler
 
 
-class TestInstructionSet(unittest.TestCase):
+class TestInstructionTemplate(unittest.TestCase):
     def test_enum_registers_codes(self):
         self.assertEqual(enum_register_codes(()), [((), ())])
         self.assertEqual(sorted(enum_register_codes(('r',))),

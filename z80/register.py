@@ -1,8 +1,8 @@
-from assertions import assert_aa
-from assertions import assert_nn
-from assertions import assert_q
-from assertions import assert_n
-from assertions import assert_d
+from .assertions import assert_aa
+from .assertions import assert_nn
+from .assertions import assert_q
+from .assertions import assert_n
+from .assertions import assert_d
 
 
 MEMSIZE = 0x10000

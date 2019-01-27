@@ -20,28 +20,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from assertions import assert_n
-from assertions import assert_nn
-from assertions import assert_d
-from assertions import assert_r
-from assertions import assert_b
-from assertions import assert_ii
-from assertions import assert_dd
-from assertions import assert_rr
-from assertions import assert_ss
-from assertions import assert_qq
-from assertions import assert_pp
+from .assertions import assert_n
+from .assertions import assert_nn
+from .assertions import assert_d
+from .assertions import assert_r
+from .assertions import assert_b
+from .assertions import assert_ii
+from .assertions import assert_dd
+from .assertions import assert_rr
+from .assertions import assert_ss
+from .assertions import assert_qq
+from .assertions import assert_pp
 
-from util import parity
-from instruction_group import InstructionGroup
-from instruction_template import InstructionTemplate as I
-from instruction_set import InstructionSet
-from register import RegisterSet
-from register import RegisterPlusOffset
-from register import MEMSIZE
-from register import HL
-from register import BC
-from register import DE
+from .util import parity
+from .instruction_group import InstructionGroup
+from .instruction_template import InstructionTemplate as I
+from .instruction_set import InstructionSet
+from .register import RegisterSet
+from .register import RegisterPlusOffset
+from .register import MEMSIZE
+from .register import HL
+from .register import BC
+from .register import DE
 
 
 INSTRUCTION_SET = InstructionSet()

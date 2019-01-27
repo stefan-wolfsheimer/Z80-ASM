@@ -1,6 +1,6 @@
 import re
 from functools import wraps
-from instruction import Instruction
+from .instruction import Instruction
 
 REGISTER_CODE = {'r': {'A': '111',
                        'B': '000',
@@ -80,6 +80,8 @@ def function_name_to_assembler(func_name, expand):
         return arg
 
     def transform_arg(arg):
+        import pprint
+        pprint.pprint(expand)
         if len(expand) and expand[0][0] in arg:
             return transform_indirect_addr(arg.replace(*expand.pop(0)))
         else:
@@ -113,8 +115,8 @@ class InstructionTemplate(object):
         for regs, codes in enum_register_codes(self.expand):
             if self.assembler is None:
                 assembler = function_name_to_assembler(name,
-                                                       zip(self.expand,
-                                                           regs))
+                                                       list(zip(self.expand,
+                                                                regs)))
             else:
                 assembler = self.assembler
             self.instructions.append(Instruction(assembler,
@@ -126,7 +128,7 @@ class InstructionTemplate(object):
 
         if self.assembler is None:
             self.assembler = function_name_to_assembler(name,
-                                                        zip(self.expand,
-                                                            self.expand))
+                                                        list(zip(self.expand,
+                                                                 self.expand)))
         self.group.add(self)
         return wrapper

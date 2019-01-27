@@ -1,3 +1,5 @@
+from .register import PC
+
 
 class InstructionSet(object):
     def __init__(self):
@@ -43,4 +45,3 @@ class InstructionSet(object):
                 return self[code1]
         else:
             raise NotImplemented('instruction not implemented %02x' % code1)
-

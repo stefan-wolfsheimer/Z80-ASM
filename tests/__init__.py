@@ -1,5 +1,6 @@
-import os
 import sys
-sys.path.insert(0,
-                os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             '..'))
+from os.path import abspath
+from os.path import dirname
+from os.path import join
+
+sys.path.insert(0, abspath(join(dirname(abspath(__file__)), "..")))

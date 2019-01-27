@@ -1,4 +1,4 @@
-from register import RegisterPlusOffset
+from .register import RegisterPlusOffset
 
 
 class Instruction(object):
