@@ -22,6 +22,7 @@
 import unittest
 from z80.instruction_template import enum_register_codes
 from z80.instruction_template import function_name_to_assembler
+from z80.instruction_template import expand_assembler
 
 
 class TestInstructionTemplate(unittest.TestCase):
@@ -52,18 +53,28 @@ class TestInstructionTemplate(unittest.TestCase):
                           (('L', 'IY'), ('101', '111'))])
 
     def test_function_name_to_assembler(self):
-        self.assertEqual(function_name_to_assembler('LD_r_r',
-                                                    [('r', 'A'), ('r', 'B')]),
+        self.assertEqual(function_name_to_assembler('LD_r_r'),
+                         ['LD', 'r', 'r'])
+        self.assertEqual(function_name_to_assembler('LD_r__HL_'),
+                         ['LD', 'r', '(HL)'])
+        self.assertEqual(function_name_to_assembler('LD__HL__r'),
+                         ['LD', '(HL)', 'r'])
+        self.assertEqual(function_name_to_assembler('LD__ii_d___ii_d_'),
+                         ['LD', '(ii+d)', '(ii+d)'])
+
+    def test_expan_assembler(self):
+        self.assertEqual(expand_assembler(['LD', 'r', 'r'],
+                                          [('r', 'A'), ('r', 'B')]),
                          ['LD', 'A', 'B'])
-        self.assertEqual(function_name_to_assembler('LD_r__HL_',
-                                                    [('r', 'A')]),
+        self.assertEqual(expand_assembler(['LD', 'r', '(HL)'],
+                                          [('r', 'A')]),
                          ['LD', 'A', '(HL)'])
-        self.assertEqual(function_name_to_assembler('LD__HL__r',
-                                                    [('r', 'A')]),
+        self.assertEqual(expand_assembler(['LD', '(HL)', 'r'],
+                                          [('r', 'A')]),
                          ['LD', '(HL)', 'A'])
-        self.assertEqual(function_name_to_assembler('LD__ii_d___ii_d_',
-                                                    [('ii', 'IX'),
-                                                     ('ii', 'IY')]),
+        self.assertEqual(expand_assembler(['LD', '(ii+d)', '(ii+d)'],
+                                          [('ii', 'IX'),
+                                           ('ii', 'IY')]),
                          ['LD', '(IX+d)', '(IY+d)'])
 
 

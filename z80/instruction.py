@@ -12,24 +12,26 @@ class Instruction(object):
             else:
                 return c
 
-        self.instr = assembler
+        self.assembler = assembler
         self.opcode = [opcode2offset(i, c)
                        for i, c in enumerate(opcode)]
         try:
             self.size = sum([1 if isinstance(c, int) else c.len()
                              for c in self.opcode])
         except Exception:
-            import pprint
-            pprint.pprint(self.opcode)
+            print(self.opcode)
             raise
         self.func = func
         self.tstates = tstates
         self.fmt = assembler[0]
-        if len(assembler[1:]) > 0:
-            self.fmt += " " + ",".join(assembler[1:])
+        # if len(assembler[1:]) > 0:
+        #    self.fmt += " " + ",".join(assembler[1:])
 
     def step(self, cpu):
         pass
 
-    def format(self):
-        return self.fmt
+    def assembler_to_str(self):
+        if len(self.assembler) == 1:
+            return self.assembler[0]
+        else:
+            return self.assembler[0] + " " + ",".join(self.assembler[1:])

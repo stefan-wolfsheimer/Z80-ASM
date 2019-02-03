@@ -47,26 +47,36 @@ from .register import DE
 INSTRUCTION_SET = InstructionSet()
 
 EIGHT_BIT_LOAD_GROUP = InstructionGroup("8 bit load group",
-                                        INSTRUCTION_SET)
+                                        INSTRUCTION_SET,
+                                        "8_bit_load")
 SIXTEEN_BIT_LOAD_GROUP = InstructionGroup("16 bit load group",
-                                          INSTRUCTION_SET)
+                                          INSTRUCTION_SET,
+                                          "16_bit_load")
 EXCHANGE_GROUP = InstructionGroup("exchange group",
-                                  INSTRUCTION_SET)
+                                  INSTRUCTION_SET,
+                                  "exchange")
 BLOCK_TRANSFER_GROUP = InstructionGroup("block transfer group",
-                                        INSTRUCTION_SET)
+                                        INSTRUCTION_SET,
+                                        "block_transfer")
 SEARCH_GROUP = InstructionGroup("search group",
-                                INSTRUCTION_SET)
+                                INSTRUCTION_SET,
+                                "search")
 EIGHT_BIT_ARITHMETIC_GROUP = InstructionGroup("8 bit arithmetic group",
-                                              INSTRUCTION_SET)
+                                              INSTRUCTION_SET,
+                                              "8_bit_arithmetic")
 GENERAL_PURPOSE_GROUP = InstructionGroup("general purpose group",
-                                         INSTRUCTION_SET)
+                                         INSTRUCTION_SET,
+                                         "general")
 SIXTEEN_BIT_ARITHMETIC_GROUP = InstructionGroup("16 bit arithmetic group",
-                                                INSTRUCTION_SET)
+                                                INSTRUCTION_SET,
+                                                "16_bit_arithmetic")
 ROTATE_AND_SHIFT_GROUP = InstructionGroup("rotate and shift group",
-                                          INSTRUCTION_SET)
+                                          INSTRUCTION_SET,
+                                          "rotate_and_shift")
 
 BIT_SET_RESET_TEST_GROUP = InstructionGroup("bit set reset test group",
-                                            INSTRUCTION_SET)
+                                            INSTRUCTION_SET,
+                                            "set_reset_test")
 
 
 class CPU(object):

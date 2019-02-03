@@ -5,6 +5,7 @@ class InstructionSet(object):
     def __init__(self):
         self.instructions = {}
         self.groups = []
+        self.assembler = {}
 
     def __getitem__(self, key):
         return self.instructions[key]
@@ -24,7 +25,16 @@ class InstructionSet(object):
                     instructions[codes[0]] = {}
                 set_code(instructions[codes[0]], codes[1:], instr)
 
+        def set_assembler(assembler, asm, instr):
+            if len(asm) == 1:
+                assembler[asm[0]] = instr
+            else:
+                if not asm[0] in assembler:
+                    assembler[asm[0]] = {}
+                set_assembler(assembler[asm[0]], asm[1:], instr)
+
         set_code(self.instructions, instr.opcode, instr)
+        set_assembler(self.assembler, instr.assembler, instr)
 
     def fetch(self, cpu):
         code1 = cpu[PC()]

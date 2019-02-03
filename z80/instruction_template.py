@@ -72,28 +72,32 @@ def encode_opcode(pattern, codes):
     return ret
 
 
-def function_name_to_assembler(func_name, expand):
+def function_name_to_assembler(func_name):
     def transform_indirect_addr(arg):
         for expr, repl in FUNCTION_NAME_INDIRECT_ADDR_PATTERN:
             if expr.match(arg):
                 return expr.sub(repl, arg)
         return arg
 
-    def transform_arg(arg):
-        import pprint
-        pprint.pprint(expand)
-        if len(expand) and expand[0][0] in arg:
-            return transform_indirect_addr(arg.replace(*expand.pop(0)))
-        else:
-            return transform_indirect_addr(arg)
-
     res = FUNCTION_NAME_TO_ASSEMBLER_PATTERN.match(func_name)
     if res is not None:
-        return [res.group(1)] + [transform_arg(arg)
-                                 for arg in res.groups()[2::2]
-                                 if arg is not None]
+        assembler = [res.group(1)] +\
+                    [transform_indirect_addr(a)
+                     for a in res.groups()[2::2]
+                     if a is not None]
+        return assembler
     else:
         raise ValueError('invalid function name {0}'.format(func_name))
+
+
+def expand_assembler(assembler, expand):
+    ret = [assembler[0]]
+    for arg in assembler[1:]:
+        if len(expand) and expand[0][0] in arg:
+            ret.append(arg.replace(*expand.pop(0)))
+        else:
+            ret.append(arg)
+    return ret
 
 
 class InstructionTemplate(object):
@@ -111,24 +115,23 @@ class InstructionTemplate(object):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        name = func.__name__
+        if self.assembler is None:
+            self.assembler = function_name_to_assembler(func.__name__)
+
         for regs, codes in enum_register_codes(self.expand):
-            if self.assembler is None:
-                assembler = function_name_to_assembler(name,
-                                                       list(zip(self.expand,
-                                                                regs)))
-            else:
-                assembler = self.assembler
+            assembler = expand_assembler(self.assembler,
+                                         list(zip(self.expand, regs)))
             self.instructions.append(Instruction(assembler,
                                                  encode_opcode(self.opcode,
                                                                codes),
                                                  func,
                                                  args=list(regs),
                                                  tstates=self.tstates))
-
-        if self.assembler is None:
-            self.assembler = function_name_to_assembler(name,
-                                                        list(zip(self.expand,
-                                                                 self.expand)))
         self.group.add(self)
         return wrapper
+
+    def assembler_to_str(self):
+        if len(self.assembler) == 1:
+            return self.assembler[0]
+        else:
+            return self.assembler[0] + " " + ",".join(self.assembler[1:])
