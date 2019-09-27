@@ -54,4 +54,5 @@ class InstructionSet(object):
                 pprint.pprint(vars(instr))
                 return self[code1]
         else:
-            raise NotImplemented('instruction not implemented %02x' % code1)
+            raise NotImplementedError('instruction not implemented %02x' %
+                                      code1)

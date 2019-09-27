@@ -1,7 +1,33 @@
 import sys
 from functools import partial
+import argparse
 from cmd import Cmd
 from .cpu import INSTRUCTION_SET
+from .printer.instr import InstrJsonPrinter
+from .printer.instr import InstrPrettyPrinter
+
+
+class ArgumentError(Exception):
+    pass
+
+
+class ArgumentParser(argparse.ArgumentParser):
+    def exit(self, status=0, message=''):
+        raise ArgumentError(message)
+
+
+class InstrListArgumentParser(ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        gr_name = kwargs.pop('group_name', None)
+        kwargs['add_help'] = False
+        if gr_name is None:
+            kwargs['description'] = 'List all instructions'
+        else:
+            kwargs['description'] = 'List all instructions of ' + gr_name
+        kwargs['usage'] = 'ls [OPTIONS]'
+        super(InstrListArgumentParser, self).__init__(*args, **kwargs)
+        self.add_argument('--json', action='store_true',
+                          help="json format")
 
 
 class BasicShell(Cmd):
@@ -56,6 +82,7 @@ class InstrGroupShell(BasicShell):
     def __init__(self, group, *args, **kwargs):
         BasicShell.__init__(self, *args, **kwargs)
         self.group = group
+        self.parser_ls = InstrListArgumentParser(group_name=group.name)
 
     def do_exit(self, args):
         return True
@@ -64,29 +91,21 @@ class InstrGroupShell(BasicShell):
         InstrGroupShell.prompt = "z80/instr/" + self.group.short_name + "> "
         BasicShell.cmdloop(self)
 
-    def do_ls(self, args):
-        def format_code(code):
-            if isinstance(code, int):
-                return "{:02x}".format(code)
-            else:
-                return "{:2}".format(str(code))
+    def help_ls(self):
+        self.parser_ls.print_help()
 
-        def list_instructions(instructions, codes=[]):
-            if isinstance(instructions, dict):
-                for k in instructions.keys():
-                    list_instructions(instructions[k], codes + [k])
-            else:
-                fcodes = [format_code(code) for code in codes]
-                print("{:12} {: <15} {}".format(" ".join(fcodes),
-                                                instructions.format(), ""))
-        for tmpl in self.group.instruction_templates:
-            print("")
-            print(tmpl.assembler_to_str())
-            print("-" * len(tmpl.assembler_to_str()))
-            for instr in tmpl.instructions:
-                fcodes = [format_code(code) for code in instr.opcode]
-                print("{:12} {: <15} {}".format(" ".join(fcodes),
-                                                instr.assembler_to_str(), ""))
+    def do_ls(self, args):
+        try:
+            args = self.parser_ls.parse_args(args.split())
+        except ArgumentError as e:
+            sys.stderr.write(str(e))
+            return
+
+        if args.json:
+            printer = InstrJsonPrinter()
+        else:
+            printer = InstrPrettyPrinter()
+        printer.write([self.group.to_dict()])
 
 
 class InstrShell(BasicShell):
@@ -100,14 +119,22 @@ class InstrShell(BasicShell):
             setattr(cls, "do_" + group.short_name,
                     partial(InstrGroupShell.enter, **{'shell': group_shell}))
 
+    def __init__(self, *args, **kwargs):
+        BasicShell.__init__(self, *args, **kwargs)
+        self.parser_ls = InstrListArgumentParser()
+
     def do_ls(self, args):
-        for group in INSTRUCTION_SET.groups:
-            print("")
-            print("+" + "-" * (len(group.name) + 2) + "+")
-            print("| " + group.name + " |")
-            print("+" + "-" * (len(group.name) + 2) + "+")
-            group_shell = getattr(self.__class__, group.short_name + "_shell")
-            group_shell.do_ls(args)
+        try:
+            args = self.parser_ls.parse_args(args.split())
+        except ArgumentError as e:
+            sys.stderr.write(str(e))
+            return
+        if args.json:
+            printer = InstrJsonPrinter()
+        else:
+            printer = InstrPrettyPrinter()
+        printer.write([group.to_dict()
+                       for group in INSTRUCTION_SET.groups])
 
     def complete_ls(self, text, line, begin, end, subline=None):
         # print("'{0}_{1}'".format(line, text))

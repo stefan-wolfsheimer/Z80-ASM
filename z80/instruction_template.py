@@ -2,6 +2,7 @@ import re
 from functools import wraps
 from .instruction import Instruction
 
+
 REGISTER_CODE = {'r': {'A': '111',
                        'B': '000',
                        'C': '001',
@@ -42,9 +43,8 @@ REGISTER_CODE = {'r': {'A': '111',
 
 
 FUNCTION_ARGUMENT = '(_([a-zA-Z]{1,2}|_[a-zA-Z]{2}_|_ii_d_))?'
-FUNCTION_NAME_TO_ASSEMBLER_PATTERN = re.compile('^([a-zA-Z]+)' +
-                                                FUNCTION_ARGUMENT +
-                                                FUNCTION_ARGUMENT + '$')
+FUNCTION_NAME_TO_ASSEMBLER_PATTERN = re.compile('^([a-zA-Z]+){0}{0}$'.
+                                                format(FUNCTION_ARGUMENT))
 FUNCTION_NAME_INDIRECT_ADDR_PATTERN = [(re.compile('^_([a-zA-Z]{2})_$'),
                                         r'(\1)'),
                                        (re.compile('^_([a-zA-Z]{2})_(d)_$'),
@@ -135,3 +135,12 @@ class InstructionTemplate(object):
             return self.assembler[0]
         else:
             return self.assembler[0] + " " + ",".join(self.assembler[1:])
+
+    def to_dict(self):
+        return {
+            'opcode': self.opcode,
+            'expand': self.expand,
+            'tstates': self.tstates,
+            'assembler': self.assembler,
+            'assembler_str': self.assembler_to_str(),
+            'instructions': [i.to_dict() for i in self.instructions]}
